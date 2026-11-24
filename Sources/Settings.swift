@@ -108,135 +108,17 @@ struct SettingsView: View {
     @State private var customizing: CustomizeTarget?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            let taken = model.rows.filter { !$0.active }
-            if !taken.isEmpty {
-                HStack(spacing: 10) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.title3)
-                        .foregroundStyle(.orange)
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(verbatim: MenuSummary.takenText(taken.map(\.ext))).bold()
-                        Text(taken.count == 1
-                             ? "Files with this extension open directly, without the Choose With menu."
-                             : "Files with these extensions open directly, without the Choose With menu.")
-                            .font(.callout).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    Button(taken.count == 1 ? "Take It Back" : "Take Back All") {
-                        TakeoverGuard.shared.takeBackAll()
-                        model.reload()
-                    }
-                }
-                .padding(10)
-                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.orange.opacity(0.15)))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.orange.opacity(0.5)))
-                .accessibilityElement(children: .combine)
+        VStack(spacing: 0) {
+            Form {
+                extensionsSection
+                behaviorSection
+                openingSection
             }
+            .formStyle(.grouped)
 
-            Text("Files with these extensions let you choose which app opens them, every time.")
-                .foregroundStyle(.secondary)
-
-            List {
-                if model.rows.isEmpty {
-                    Text("No extensions yet. Add one below.")
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(model.rows) { row in
-                    HStack(spacing: 10) {
-                        Text(verbatim: "." + row.ext)
-                            .font(.system(.body, design: .monospaced))
-                            .frame(minWidth: 70, alignment: .leading)
-                        // Only worth showing when something's wrong: another app took over.
-                        if !row.active {
-                            Label { Text(verbatim: "Opens in " + (row.handlerName ?? "no app")) }
-                                icon: { Image(systemName: "exclamationmark.triangle.fill") }
-                                .foregroundStyle(.orange)
-                                .help("Another app became the default for this extension.")
-                            Button("Take Back") { model.reenable(row.ext) }
-                                .controlSize(.small)
-                        }
-                        if let note = row.note {
-                            Text(verbatim: note)
-                                .font(.caption).foregroundStyle(.secondary)
-                                .lineLimit(1).truncationMode(.middle)
-                        }
-                        Spacer()
-                        if let summary = row.appSummary {
-                            Text(summary).font(.caption).foregroundStyle(.secondary)
-                        }
-                        IconButton(symbol: "pencil",
-                                   label: "Customize apps for ." + row.ext,
-                                   tooltip: "Customize apps for ." + row.ext + ": reorder and hide") {
-                            customizing = CustomizeTarget(ext: row.ext)
-                        }
-                        IconButton(symbol: "trash",
-                                   label: "Remove ." + row.ext,
-                                   tooltip: "Remove ." + row.ext + " and give it back to its previous app",
-                                   hoverTint: .red) {
-                            model.remove(row.ext)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                    .listRowBackground(row.active ? nil : Color.orange.opacity(0.15))
-                }
-            }
-            .listStyle(.bordered(alternatesRowBackgrounds: true))
-            .frame(minHeight: 180)
-            .onReceive(model.$customizeRequest) { ext in
-                guard let ext else { return }
-                customizing = CustomizeTarget(ext: ext)
-                model.customizeRequest = nil
-            }
-            .sheet(item: $customizing) { target in
-                CustomizeView(model: CustomizeModel(ext: target.ext)) {
-                    customizing = nil
-                    model.reload()
-                }
-            }
-
-            HStack {
-                TextField("Add extensions, e.g. md, txt, json", text: $model.input)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { model.add() }
-                Button("Add") { model.add() }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(Registry.parse(model.input).isEmpty)
-            }
-
-            Toggle("Start at login, so the menu appears instantly", isOn: Binding(
-                get: { model.launchAtLogin },
-                set: { model.setLaunchAtLogin($0) }))
-            VStack(alignment: .leading, spacing: 2) {
-                Toggle("Take extensions back if another app claims them", isOn: Binding(
-                    get: { model.takeBack },
-                    set: { on in
-                        Prefs.takeBackExtensions = on
-                        // Ask for notification permission here, when it's clearly needed.
-                        if on { Notifier.requestPermission() }
-                        TakeoverGuard.shared.check()
-                    }))
-                Text("Apps can make themselves the default for a file type. When this is off, Choose With warns you in the menu bar and here instead.")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.leading, 20)
-            }
-            Toggle("Show icon in menu bar", isOn: Binding(
-                get: { model.showMenuBarIcon },
-                set: { model.setShowMenuBarIcon($0) }))
-            Toggle("Show splash screen when opening Choose With", isOn: Binding(
-                get: { model.showSplash },
-                set: { Prefs.showSplash = $0 }))
-            Toggle("Show Help when opening Choose With", isOn: Binding(
-                get: { model.showHelpOnLaunch },
-                set: { Prefs.showHelpOnLaunch = $0 }))
-            Text("Choose With keeps running in the background without a Dock icon. Quit it from the menu bar icon, or with ⌘Q in this window.")
-                .font(.caption).foregroundStyle(.secondary)
-
-            HStack(alignment: .top) {
+            HStack(alignment: .center) {
                 if let message = model.message {
-                    Text(message).font(.callout).foregroundStyle(.secondary)
+                    Text(message).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
@@ -247,13 +129,160 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.bordered)
                 .clipShape(Circle())
-                .controlSize(.small)
                 .help("How Choose With works")
                 .accessibilityLabel("Help")
             }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 14)
         }
-        .padding(16)
-        .frame(minWidth: 520, minHeight: 460)
+        .frame(minWidth: 540, minHeight: 520)
+        .onReceive(model.$customizeRequest) { ext in
+            guard let ext else { return }
+            customizing = CustomizeTarget(ext: ext)
+            model.customizeRequest = nil
+        }
+        .sheet(item: $customizing) { target in
+            CustomizeView(model: CustomizeModel(ext: target.ext)) {
+                customizing = nil
+                model.reload()
+            }
+        }
+    }
+
+    // MARK: Sections
+
+    private var extensionsSection: some View {
+        Section {
+            let taken = model.rows.filter { !$0.active }
+            if !taken.isEmpty { takenBanner(taken) }
+
+            if model.rows.isEmpty {
+                Text("No extensions yet. Add one below.")
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(model.rows) { row in extensionRow(row) }
+
+            HStack {
+                TextField("Add extensions", text: $model.input, prompt: Text("Add extensions, e.g. md, txt, json"))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { model.add() }
+                Button("Add") { model.add() }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(Registry.parse(model.input).isEmpty)
+            }
+        } header: {
+            Text("Extensions")
+        } footer: {
+            Text("Files with these extensions let you choose which app opens them, every time.")
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var behaviorSection: some View {
+        Section("Behavior") {
+            Toggle(isOn: Binding(
+                get: { model.launchAtLogin },
+                set: { model.setLaunchAtLogin($0) })) {
+                Text("Start at login")
+                Text("The menu appears instantly, even right after a restart.")
+            }
+            Toggle(isOn: Binding(
+                get: { model.takeBack },
+                set: { on in
+                    Prefs.takeBackExtensions = on
+                    // Ask for notification permission here, when it's clearly needed.
+                    if on { Notifier.requestPermission() }
+                    TakeoverGuard.shared.check()
+                })) {
+                Text("Take extensions back if another app claims them")
+                Text("Apps can make themselves the default for a file type. When this is off, Choose With warns you in the menu bar and here instead.")
+            }
+        }
+    }
+
+    private var openingSection: some View {
+        Section {
+            Toggle("Show icon in menu bar", isOn: Binding(
+                get: { model.showMenuBarIcon },
+                set: { model.setShowMenuBarIcon($0) }))
+            Toggle("Show splash screen when opening Choose With", isOn: Binding(
+                get: { model.showSplash },
+                set: { Prefs.showSplash = $0 }))
+            Toggle("Show Help when opening Choose With", isOn: Binding(
+                get: { model.showHelpOnLaunch },
+                set: { Prefs.showHelpOnLaunch = $0 }))
+        } header: {
+            Text("Appearance")
+        } footer: {
+            Label("Choose With keeps running in the background without a Dock icon. Quit it from the menu bar icon, or with ⌘Q in this window.",
+                  systemImage: "info.circle")
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: Pieces
+
+    private func takenBanner(_ taken: [SettingsModel.Row]) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title2)
+                .foregroundStyle(.orange)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: MenuSummary.takenText(taken.map(\.ext))).bold()
+                Text(taken.count == 1
+                     ? "Files with this extension open directly, without the Choose With menu."
+                     : "Files with these extensions open directly, without the Choose With menu.")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            Button(taken.count == 1 ? "Take It Back" : "Take Back All") {
+                TakeoverGuard.shared.takeBackAll()
+                model.reload()
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.orange.opacity(0.15)))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func extensionRow(_ row: SettingsModel.Row) -> some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: "." + row.ext)
+                    .font(.system(.body, design: .monospaced))
+                if !row.active {
+                    Label { Text(verbatim: "Opens in " + (row.handlerName ?? "no app")) }
+                        icon: { Image(systemName: "exclamationmark.triangle.fill") }
+                        .foregroundStyle(.orange)
+                        .help("Another app became the default for this extension.")
+                }
+                // Secondary details as a readable subtitle, like System Settings.
+                let details = [row.appSummary, row.note].compactMap { $0 }
+                if !details.isEmpty {
+                    Text(verbatim: details.joined(separator: " · "))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle)
+                }
+            }
+            Spacer()
+            if !row.active {
+                Button("Take Back") { model.reenable(row.ext) }
+            }
+            IconButton(symbol: "pencil",
+                       label: "Customize apps for ." + row.ext,
+                       tooltip: "Customize apps for ." + row.ext + ": reorder and hide") {
+                customizing = CustomizeTarget(ext: row.ext)
+            }
+            IconButton(symbol: "trash",
+                       label: "Remove ." + row.ext,
+                       tooltip: "Remove ." + row.ext + " and give it back to its previous app",
+                       hoverTint: .red) {
+                model.remove(row.ext)
+            }
+        }
     }
 }
 
@@ -298,9 +327,9 @@ final class SettingsWindowController: NSWindowController {
         window.center()
         window.setFrameAutosaveName("SettingsWindow")
         // Room for the Customize buttons, even if a smaller size was saved earlier.
-        window.contentMinSize = NSSize(width: 600, height: 520)
-        if window.frame.width < 600 || window.frame.height < 540 {
-            window.setContentSize(NSSize(width: 620, height: 560))
+        window.contentMinSize = NSSize(width: 560, height: 560)
+        if window.frame.width < 560 || window.frame.height < 600 {
+            window.setContentSize(NSSize(width: 600, height: 680))
             window.center()
         }
         self.init(window: window)
