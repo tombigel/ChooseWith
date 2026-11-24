@@ -25,7 +25,8 @@ Builds `ChooseWith.app` and installs it to `~/Applications`.
 
 Open **Choose With** directly (Spotlight, `~/Applications`, or ⌘, while it's
 running, or the last item in any popup) to add and remove extensions. Removing an
-extension gives it back to the app that opened it before. macOS may ask you to
+extension gives it back to the app that opened it before. Apps, folders, disks,
+aliases and links can't be added, so opening them always works as usual. macOS may ask you to
 confirm each change of default app.
 
 After first use the app keeps running in the background (no Dock icon), so the menu
