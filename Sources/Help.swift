@@ -5,6 +5,8 @@ import SwiftUI
 
 enum Credits {
     static let author = "Tom Bigelajzen"
+    static let websiteName = "tombigel.com"
+    static let website = URL(string: "https://tombigel.com")!
     static var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
     }
@@ -17,10 +19,21 @@ enum Credits {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(options: [
             .applicationName: "Open With Popup",
-            .credits: NSAttributedString(
-                string: "Made by \(author)",
-                attributes: [.font: NSFont.systemFont(ofSize: 11), .foregroundColor: NSColor.secondaryLabelColor]),
+            .credits: aboutCredits(),
         ])
+    }
+
+    private static func aboutCredits() -> NSAttributedString {
+        let font = NSFont.systemFont(ofSize: 11)
+        let para = NSMutableParagraphStyle()
+        para.alignment = .center
+        let text = NSMutableAttributedString(
+            string: "Made by \(author)\n",
+            attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor, .paragraphStyle: para])
+        text.append(NSAttributedString(
+            string: websiteName,
+            attributes: [.font: font, .link: website, .paragraphStyle: para]))
+        return text
     }
 }
 
@@ -61,8 +74,12 @@ struct HelpView: View {
             }
 
             HStack {
-                Text("Made by \(Credits.author)\nVersion \(Credits.version)")
-                    .font(.caption).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Made by \(Credits.author) · Version \(Credits.version)")
+                        .foregroundStyle(.secondary)
+                    Link(Credits.websiteName, destination: Credits.website)
+                }
+                .font(.caption)
                 Spacer()
                 Button("Open Settings") {
                     NotificationCenter.default.post(name: .owpShowSettings, object: nil)

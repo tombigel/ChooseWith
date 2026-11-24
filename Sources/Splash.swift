@@ -14,7 +14,7 @@ struct SplashView: View {
                 .font(.system(size: 26, weight: .bold))
             Text("Choose which app opens a file, every time.")
                 .foregroundStyle(.secondary)
-            Text("Made by \(Credits.author) · Version \(Credits.version)")
+            Text("Made by \(Credits.author) · \(Credits.websiteName) · Version \(Credits.version)")
                 .font(.caption).foregroundStyle(.tertiary)
                 .padding(.top, 6)
         }
