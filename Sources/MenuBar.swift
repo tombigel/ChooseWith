@@ -118,8 +118,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     @objc func update() {
         if Prefs.showMenuBarIcon, item == nil {
             let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-            let image = NSImage(systemSymbolName: "contextualmenu.and.cursorarrow", accessibilityDescription: "Choose With")
-                ?? NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: "Choose With")
+            // An SF Symbol, centered and sized like the system's own menu bar icons.
+            let image = NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: "Choose With")?
+                .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 14, weight: .regular))
             image?.isTemplate = true
             item.button?.image = image
             item.button?.toolTip = "Choose With"
@@ -162,9 +163,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let title = NSMenuItem(title: "Choose With", action: nil, keyEquivalent: "")
-        title.isEnabled = false
-        menu.addItem(title)
+        menu.addItem(MenuText.header("Choose With"))
 
         let tracked = Registry.tracked
         let active = tracked.filter(Registry.isActive)

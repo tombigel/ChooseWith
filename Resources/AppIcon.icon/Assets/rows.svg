@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- first app -->
+  <rect x="296" y="310" width="76" height="76" rx="20" fill="#FF9E33"/>
+  <rect x="404" y="331" width="220" height="34" rx="17" fill="#CCD1E0"/>
+  <!-- highlighted app -->
+  <rect x="268" y="428" width="444" height="128" rx="30" fill="#4D73FF"/>
+  <rect x="296" y="454" width="76" height="76" rx="20" fill="#FFFFFF"/>
+  <rect x="404" y="475" width="250" height="34" rx="17" fill="#FFFFFF" fill-opacity="0.9"/>
+  <!-- third app -->
+  <rect x="296" y="598" width="76" height="76" rx="20" fill="#33C778"/>
+  <rect x="404" y="619" width="180" height="34" rx="17" fill="#CCD1E0"/>
+</svg>

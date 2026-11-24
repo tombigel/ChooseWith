@@ -15,7 +15,7 @@ struct SplashView: View {
             Text("Don’t just open with. Choose with.")
                 .foregroundStyle(.secondary)
             Text("Made by \(Credits.author) · \(Credits.websiteName) · Version \(Credits.version)")
-                .font(.caption).foregroundStyle(.tertiary)
+                .font(.callout).foregroundStyle(.secondary)
                 .padding(.top, 6)
         }
         .padding(.horizontal, 48).padding(.vertical, 36)
@@ -67,17 +67,20 @@ final class SplashController {
         host.addGestureRecognizer(click)
 
         NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.25
+            ctx.duration = reduceMotion ? 0 : 0.25
             panel.animator().alphaValue = 1
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25 + hold) { [weak self] in self?.dismiss() }
     }
 
+    /// Respect System Settings › Accessibility › Display › Reduce motion.
+    private var reduceMotion: Bool { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+
     @objc private func dismiss() {
         guard !finished, let panel else { return }
         finished = true
         NSAnimationContext.runAnimationGroup({ ctx in
-            ctx.duration = 0.3
+            ctx.duration = reduceMotion ? 0 : 0.3
             panel.animator().alphaValue = 0
         }, completionHandler: { [weak self] in
             panel.orderOut(nil)

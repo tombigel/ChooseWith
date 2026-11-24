@@ -110,7 +110,7 @@ struct HelpView: View {
                         Link("Report a bug", destination: Credits.bugReport)
                     }
                 }
-                .font(.caption)
+                .font(.callout)
                 Spacer()
                 Button("Open Settings") {
                     NotificationCenter.default.post(name: .owpShowSettings, object: nil)
@@ -121,6 +121,7 @@ struct HelpView: View {
         }
         .padding(22)
         .frame(width: 460)
+        .onExitCommand { close() }   // Esc closes, like other help windows
         .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -158,7 +159,7 @@ final class HelpWindowController: NSWindowController {
             contentRect: NSRect(x: 0, y: 0, width: 460, height: 520),
             styleMask: [.titled, .closable],
             backing: .buffered, defer: false)
-        window.title = "About Choose With"
+        window.title = "Choose With Help"
         window.isReleasedWhenClosed = false
         self.init(window: window)
         window.contentView = NSHostingView(rootView: HelpView { [weak window] in window?.close() })

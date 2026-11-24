@@ -51,14 +51,30 @@ directly shows a short splash screen; starting at login or opening a file never 
 
 ## Command line
 
+Everything in Settings is also available from the terminal. `./choosewith --help`
+lists it all:
+
 ```bash
-./choosewith --register md txt     # use the popup for these extensions
-./choosewith --unregister md       # give .md back to its previous app
-./choosewith --login on            # start at login (or off)
-./choosewith --status              # managed extensions and whether each is active
-./choosewith --list md             # apps that can open .md
-./choosewith --restore md=com.microsoft.VSCode
+./choosewith --register md txt          # use the menu for these extensions
+./choosewith --unregister md            # give .md back to its previous app
+./choosewith --status                   # extensions, their state, all settings
+
+./choosewith --list svg                 # apps for .svg in menu order (hidden marked)
+./choosewith --order svg Gapplin,Inkscape   # put these first (names or bundle IDs)
+./choosewith --hide svg Safari "Google Chrome"   # move under "More Apps"
+./choosewith --show svg Safari          # show again
+./choosewith --reset svg                # default order, all shown
+
+./choosewith --take-back on             # take extensions back automatically
+./choosewith --take-back-now            # reclaim anything another app took
+
+./choosewith --login on                 # start at login
+./choosewith --menubar off              # hide the menu bar icon
+./choosewith --splash off               # no splash screen
+./choosewith --help-on-launch off       # no Help window on open
 ```
+
+A running copy of the app picks up changes right away.
 
 ## Signing and releases
 
@@ -82,7 +98,8 @@ which writes `dist/ChooseWith.zip`.
 
 ## Icon
 
-`swift tools/make_icon.swift` redraws `Resources/AppIcon.icns`.
+The app icon is an Icon Composer file, `Resources/AppIcon.icon` (open it in Icon
+Composer to edit). `build.sh` compiles it with `actool`.
 
 ## License
 

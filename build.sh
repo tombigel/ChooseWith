@@ -24,8 +24,11 @@ fi
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp Info.plist "$APP/Contents/Info.plist"
-[[ -f Resources/AppIcon.icns ]] || swift tools/make_icon.swift
-cp Resources/AppIcon.icns "$APP/Contents/Resources/"
+# App icon: compiled from the Icon Composer file (Assets.car for macOS 26+, plus
+# AppIcon.icns for older systems).
+xcrun actool Resources/AppIcon.icon --compile "$APP/Contents/Resources" --platform macosx \
+  --minimum-deployment-target 13.0 --app-icon AppIcon \
+  --output-partial-info-plist build/icon-partial.plist >/dev/null
 swiftc -O -swift-version 5 -target arm64-apple-macos13 -o build/cw-arm64 Sources/*.swift
 swiftc -O -swift-version 5 -target x86_64-apple-macos13 -o build/cw-x86_64 Sources/*.swift
 lipo -create build/cw-arm64 build/cw-x86_64 -output "$APP/Contents/MacOS/ChooseWith"

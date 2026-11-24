@@ -1,0 +1,26 @@
+{
+  "fill" : {
+    "automatic-gradient" : "extended-srgb:0.30000,0.40000,0.95000,1.00000"
+  },
+  "groups" : [
+    {
+      "layers" : [
+        { "image-name" : "pointer.svg", "name" : "pointer" }
+      ],
+      "name" : "pointer",
+      "translucency" : { "enabled" : false, "value" : 0 }
+    },
+    {
+      "layers" : [
+        { "image-name" : "rows.svg", "name" : "rows" },
+        { "image-name" : "card.svg", "name" : "card" }
+      ],
+      "name" : "menu"
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}

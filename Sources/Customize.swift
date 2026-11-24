@@ -136,7 +136,7 @@ struct CustomizeView: View {
             .accessibilityLabel(Text(verbatim: "Apps for ." + model.ext))
 
             Text(verbatim: "\(model.shownCount) of \(model.items.count) apps in the menu. Your order replaces “last used first” for .\(model.ext).")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.callout).foregroundStyle(.secondary)
 
             HStack {
                 Button("Show All") { model.setAll(shown: true) }

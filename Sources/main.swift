@@ -2,67 +2,12 @@
 // file (double-click, Return, `open file.ext`) shows an "Open With" menu at the
 // mouse pointer instead of launching a fixed app.
 //
-// CLI:
-//   ChooseWith --register ext [ext ...]    make this app the default for these extensions
-//   ChooseWith --unregister ext [ext ...]  give these extensions back to their previous default
-//   ChooseWith --restore ext=bundle.id ... hand an extension to a specific app
-//   ChooseWith --login on|off              start at login or not
-//   ChooseWith --status                    show each managed extension and its current default
-//   ChooseWith --list ext                  print the apps that can open an extension
+// Command-line options: see CLI.swift (or run with --help).
 //
 // Launched with no files (double-click the app), it opens the Settings window.
 
 import AppKit
 import SwiftUI
-
-// MARK: - CLI
-
-func report(_ ext: String, _ err: String?, _ okText: String) -> Bool {
-    print(err.map { "✗ \($0)" } ?? "✓ .\(Registry.normalize(ext)) \(okText)")
-    return err == nil
-}
-
-func runCLI(_ args: [String]) -> Int32? {
-    guard let cmd = args.first, cmd.hasPrefix("--") else { return nil }
-    let rest = Array(args.dropFirst())
-    switch cmd {
-    case "--register":
-        guard !rest.isEmpty else { print("usage: --register ext [ext ...]"); return 2 }
-        return rest.map { report($0, Registry.register($0), "→ popup") }.allSatisfy { $0 } ? 0 : 1
-    case "--unregister":
-        guard !rest.isEmpty else { print("usage: --unregister ext [ext ...]"); return 2 }
-        return rest.map { report($0, Registry.unregister($0), "→ previous app") }.allSatisfy { $0 } ? 0 : 1
-    case "--restore":
-        guard !rest.isEmpty else { print("usage: --restore ext=bundle.id [...]"); return 2 }
-        var ok = true
-        for pair in rest {
-            let parts = pair.split(separator: "=", maxSplits: 1).map(String.init)
-            guard parts.count == 2 else { print("✗ bad pair: \(pair)"); ok = false; continue }
-            ok = report(parts[0], Registry.setDefault(bundleID: parts[1], forExtension: parts[0]), "→ \(parts[1])") && ok
-        }
-        return ok ? 0 : 1
-    case "--login":
-        guard let arg = rest.first, ["on", "off"].contains(arg) else {
-            print("usage: --login on|off   (now \(LoginItem.isEnabled ? "on" : "off"))"); return 2
-        }
-        print(LoginItem.set(arg == "on"))
-        return LoginItem.isEnabled == (arg == "on") ? 0 : 1
-    case "--status":
-        for ext in Registry.tracked {
-            let h = Registry.currentHandler(forExtension: ext) ?? "none"
-            print(".\(ext)\t\(Registry.isActive(ext) ? "popup" : "→ " + h)")
-        }
-        return 0
-    case "--list":
-        guard let ext = rest.first, let type = Registry.utType(forExtension: ext) else { print("usage: --list ext"); return 2 }
-        for url in NSWorkspace.shared.urlsForApplications(toOpen: type) {
-            print("\(Bundle(url: url)?.bundleIdentifier ?? "?")\t\(url.path)")
-        }
-        return 0
-    default:
-        print("unknown option \(cmd)"); return 2
-    }
-}
 
 // Skip -psn_ style args macOS may pass when launched by LaunchServices.
 let cliArgs = CommandLine.arguments.dropFirst().filter { !$0.hasPrefix("-psn_") && !$0.hasPrefix("-NS") }
@@ -84,6 +29,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         NSApp.mainMenu = makeMainMenu()
         menuBar = MenuBarController { [weak self] in self?.showSettings() }
         TakeoverGuard.shared.start()
+        // Changes made from the command line while the app is running.
+        DistributedNotificationCenter.default().addObserver(forName: cliChangedNotice, object: nil, queue: .main) { _ in
+            NotificationCenter.default.post(name: .owpPrefsChanged, object: nil)
+        }
         NotificationCenter.default.addObserver(self, selector: #selector(showHelp), name: .owpShowHelp, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(showSettings), name: .owpShowSettings, object: nil)
         // Started at login: stay quietly in the background so the popup is instant.
@@ -206,8 +155,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     private func candidateApps(for urls: [URL]) -> [URL] {
         // Apps that can open every file in the selection, in LaunchServices order.
+        // One lookup per distinct extension, not per file: selecting a thousand
+        // .jpg files asks LaunchServices once.
         var result: [URL]? = nil
+        var seenExtensions = Set<String>()
         for url in urls {
+            let ext = url.pathExtension.lowercased()
+            // Files without an extension may differ in type, so check each one.
+            if !ext.isEmpty, !seenExtensions.insert(ext).inserted { continue }
             let apps = NSWorkspace.shared.urlsForApplications(toOpen: url)
             if let current = result {
                 let set = Set(apps.map(\.standardizedFileURL))
@@ -244,11 +199,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.autoenablesItems = false
         menu.delegate = self
 
-        let title = urls.count == 1 ? menuSafe(urls[0].lastPathComponent) : "\(urls.count) files"
-        let header = NSMenuItem(title: "Open “\(title)” with", action: nil, keyEquivalent: "")
-        header.isEnabled = false
-        menu.addItem(header)
-        menu.addItem(.separator())
+        let title = urls.count == 1 ? MenuText.safeFileName(urls[0].lastPathComponent) : "\(urls.count) files"
+        menu.addItem(MenuText.header("Open “\(title)” with"))
 
         for (i, app) in apps.enumerated() {
             menu.addItem(appItem(app, urls: urls, key: i < 9 ? String(i + 1) : ""))
@@ -305,14 +257,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menuOpen = false
     }
 
-    /// File names can be very long or contain line breaks and control characters;
-    /// keep the menu header to one tidy line.
-    private func menuSafe(_ name: String) -> String {
-        let oneLine = String(name.unicodeScalars.map { CharacterSet.controlCharacters.contains($0) ? " " : Character($0) })
-        guard oneLine.count > 60 else { return oneLine }
-        return oneLine.prefix(40) + "…" + oneLine.suffix(17)
-    }
-
     private func appItem(_ app: URL, urls: [URL], key: String) -> NSMenuItem {
         let item = NSMenuItem(title: AppLists.name(app), action: #selector(openWith(_:)), keyEquivalent: key)
         item.keyEquivalentModifierMask = []
@@ -335,7 +279,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         guard let urls = sender.representedObject as? [URL] else { return }
         menuOpen = true
         let panel = NSOpenPanel()
-        panel.title = "Choose an application"
+        panel.message = "Choose an app to open " + (urls.count == 1 ? "“" + MenuText.safeFileName(urls[0].lastPathComponent) + "”" : "\(urls.count) files") + " with"
+        panel.prompt = "Choose"
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.allowedContentTypes = [.application, .applicationBundle]
         panel.canChooseDirectories = false
