@@ -8,7 +8,7 @@ enum Credits {
     static let websiteName = "tombigel.com"
     static let website = URL(string: "https://tombigel.com")!
     static let repo = URL(string: "https://github.com/tombigel/ChooseWith")!
-    static let bugReport = URL(string: "https://github.com/tombigel/ChooseWith/issues/new")!
+    static let bugReport = URL(string: "https://github.com/tombigel/ChooseWith/issues/new?template=bug_report.yml")!
 
     static func openRepo() { NSWorkspace.shared.open(repo) }
     static func reportBug() { NSWorkspace.shared.open(bugReport) }

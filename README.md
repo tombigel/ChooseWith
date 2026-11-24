@@ -22,12 +22,57 @@ menu at your pointer with every app that can open it.
 
 ## Install
 
+**Homebrew**
+
+```bash
+brew tap tombigel/tap
+brew trust tombigel/tap        # Homebrew asks you to trust third-party taps once
+brew install --cask choose-with
+```
+
+This installs the app and the `choosewith` command line.
+
+**Download**
+
+Get `ChooseWith-<version>.zip` from the
+[latest release](https://github.com/tombigel/ChooseWith/releases/latest), unzip it,
+and move **ChooseWith.app** to Applications. It's signed with a Developer ID and
+notarized by Apple.
+
+Requires macOS 13 or later; universal (Apple Silicon and Intel).
+
+**Build from source**
+
 ```bash
 ./build.sh
 ```
 
-Builds `ChooseWith.app` and installs it to `~/Applications`. Requires macOS 13 or
-later.
+Builds `ChooseWith.app` and installs it to `~/Applications`.
+
+## Updating
+
+- Homebrew: `brew upgrade --cask choose-with`
+- Download: replace the app with the one from the latest release. Your settings are
+  kept.
+
+## Uninstalling
+
+First give your extensions back to the apps that opened them before, from Settings
+(the trash next to each) or:
+
+```bash
+choosewith --unregister-all
+```
+
+Then quit Choose With from its menu bar icon and delete the app, or run
+`brew uninstall --cask choose-with` (add `--zap` to remove its settings too). If you
+skip the first step, macOS picks another app for those extensions on its own.
+
+## Privacy
+
+Choose With makes no network connections and collects nothing. Its settings are stored
+locally in `~/Library/Preferences/com.tombigel.ChooseWith.plist`. The only links it
+opens are the website, GitHub and bug-report links you click.
 
 ## Settings
 
@@ -80,31 +125,35 @@ again to get back to Settings.
 ## Command line
 
 Everything in Settings is also available from the terminal; a running copy of the
-app picks up changes right away. `./choosewith --help` lists every option:
+app picks up changes right away. `choosewith --help` lists every option.
+
+Homebrew puts `choosewith` on your PATH. Otherwise it's the app's own binary:
+`/Applications/ChooseWith.app/Contents/MacOS/ChooseWith` (or `./choosewith` in this
+repo, for a build installed with `build.sh`).
 
 ```bash
-./choosewith --register md txt          # use the menu for these extensions
-./choosewith --unregister md            # give .md back to its previous app
-./choosewith --unregister-all           # give every extension back (before uninstalling)
-./choosewith --status                   # extensions, their state, all settings
+choosewith --register md txt            # use the menu for these extensions
+choosewith --unregister md            # give .md back to its previous app
+choosewith --unregister-all           # give every extension back (before uninstalling)
+choosewith --status                   # extensions, their state, all settings
 
-./choosewith --list svg                 # apps for .svg in menu order (hidden marked)
-./choosewith --order svg Gapplin,Inkscape   # put these first (names or bundle IDs)
-./choosewith --hide svg Safari "Google Chrome"   # move under "More Apps"
-./choosewith --show svg Safari          # show again
-./choosewith --reset svg                # default order, all shown
+choosewith --list svg                 # apps for .svg in menu order (hidden marked)
+choosewith --order svg Gapplin,Inkscape   # put these first (names or bundle IDs)
+choosewith --hide svg Safari "Google Chrome"   # move under "More Apps"
+choosewith --show svg Safari          # show again
+choosewith --reset svg                # default order, all shown
 
-./choosewith --take-back on             # take extensions back automatically
-./choosewith --take-back-now            # reclaim anything another app took
+choosewith --take-back on             # take extensions back automatically
+choosewith --take-back-now            # reclaim anything another app took
 
-./choosewith --export settings.json     # save your setup (no file: print it)
-./choosewith --import settings.json --dry-run   # show what would change
-./choosewith --import settings.json     # apply it
+choosewith --export settings.json     # save your setup (no file: print it)
+choosewith --import settings.json --dry-run   # show what would change
+choosewith --import settings.json     # apply it
 
-./choosewith --login on                 # start at login
-./choosewith --menubar off              # hide the menu bar icon
-./choosewith --splash off               # no splash screen
-./choosewith --help-on-launch off       # no Help window on open
+choosewith --login on                 # start at login
+choosewith --menubar off              # hide the menu bar icon
+choosewith --splash off               # no splash screen
+choosewith --help-on-launch off       # no Help window on open
 ```
 
 ## Signing and releases
@@ -137,4 +186,4 @@ Composer to edit). `build.sh` compiles it with `actool`.
 
 MIT. See [LICENSE](LICENSE).
 
-Found a bug? [Open an issue](https://github.com/tombigel/ChooseWith/issues/new).
+Found a bug? [Report it](https://github.com/tombigel/ChooseWith/issues/new?template=bug_report.yml). Changes are listed in the [changelog](CHANGELOG.md).
