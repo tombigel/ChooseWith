@@ -9,6 +9,7 @@ usage: choosewith <option>
 Extensions
   --register ext [ext ...]       use the Choose With menu for these extensions
   --unregister ext [ext ...]     give them back to the app that opened them before
+  --unregister-all               do that for every extension (e.g. before uninstalling)
   --restore ext=bundle.id ...    hand an extension to a specific app
   --status                       extensions, their state, and all settings
 
@@ -97,6 +98,11 @@ func runCLI(_ args: [String]) -> Int32? {
     case "--unregister":
         guard !rest.isEmpty else { print("usage: --unregister ext [ext ...]"); return 2 }
         code = rest.map { report($0, Registry.unregister($0), "→ previous app") }.allSatisfy { $0 } ? 0 : 1
+    case "--unregister-all":
+        let all = Registry.tracked
+        guard !all.isEmpty else { print("No extensions to give back."); return 0 }
+        code = all.map { report($0, Registry.unregister($0), "→ previous app") }.allSatisfy { $0 } ? 0 : 1
+
     case "--restore":
         guard !rest.isEmpty else { print("usage: --restore ext=bundle.id [...]"); return 2 }
         var ok = true

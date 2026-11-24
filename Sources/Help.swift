@@ -13,7 +13,7 @@ enum Credits {
     static func openRepo() { NSWorkspace.shared.open(repo) }
     static func reportBug() { NSWorkspace.shared.open(bugReport) }
     static var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
     }
     static var copyright: String {
         Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? "© 2026 \(author)"

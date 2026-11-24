@@ -85,6 +85,7 @@ app picks up changes right away. `./choosewith --help` lists every option:
 ```bash
 ./choosewith --register md txt          # use the menu for these extensions
 ./choosewith --unregister md            # give .md back to its previous app
+./choosewith --unregister-all           # give every extension back (before uninstalling)
 ./choosewith --status                   # extensions, their state, all settings
 
 ./choosewith --list svg                 # apps for .svg in menu order (hidden marked)
@@ -124,7 +125,8 @@ then:
 NOTARIZE=1 ./build.sh
 ```
 
-which writes `dist/ChooseWith.zip`.
+which writes `dist/ChooseWith-<version>.zip` and prints its SHA-256. The version
+comes from `CFBundleShortVersionString` in `Info.plist`.
 
 ## Icon
 

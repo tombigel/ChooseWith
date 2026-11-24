@@ -49,8 +49,12 @@ if [[ "${NOTARIZE:-0}" == 1 ]]; then
   xcrun notarytool submit build/notarize.zip --keychain-profile "$NOTARY_PROFILE" --wait
   xcrun stapler staple "$APP"
   spctl --assess --type execute --verbose "$APP"
-  ditto -c -k --keepParent "$APP" dist/ChooseWith.zip
-  echo "Release: dist/ChooseWith.zip"
+  VERSION=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" Info.plist)
+  ZIP="dist/ChooseWith-$VERSION.zip"
+  rm -f "$ZIP"
+  ditto -c -k --keepParent "$APP" "$ZIP"
+  echo "Release: $ZIP"
+  echo "SHA-256: $(shasum -a 256 "$ZIP" | cut -d' ' -f1)"
 fi
 
 # The app stays running in the background; quit the old copy before replacing it.
