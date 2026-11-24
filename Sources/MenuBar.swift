@@ -62,6 +62,35 @@ enum LoginItem {
     }
 }
 
+/// Text for the menu bar menu's summary lines, kept short whatever the input.
+enum MenuSummary {
+    /// Up to `maxNames` extensions within about `maxChars` characters, then "+N more".
+    static func line(active: [String], tracked: [String], maxNames: Int = 4, maxChars: Int = 36) -> String {
+        if tracked.isEmpty { return "No extensions yet" }
+        if active.isEmpty { return tracked.count == 1 ? "1 extension, not active" : "\(tracked.count) extensions, none active" }
+        var names: [String] = []
+        for ext in active {
+            // The "+N more" suffix counts toward the limit too. The first name is
+            // always included (shortened below if it's too long on its own).
+            let next = (names + ["." + ext]).joined(separator: ", ")
+            let remaining = active.count - names.count - 1
+            let suffix = remaining > 0 ? " +\(remaining) more" : ""
+            if !names.isEmpty && (names.count == maxNames || next.count + suffix.count > maxChars) { break }
+            names.append("." + ext)
+        }
+        // A single very long extension still has to fit.
+        if names.count == 1, names[0].count > maxChars {
+            names[0] = String(names[0].prefix(maxChars - 1)) + "…"
+        }
+        let rest = active.count - names.count
+        return names.joined(separator: ", ") + (rest > 0 ? " +\(rest) more" : "")
+    }
+
+    static func warning(inactive: Int) -> String {
+        inactive == 1 ? "1 needs re-enabling…" : "\(inactive) need re-enabling…"
+    }
+}
+
 final class MenuBarController: NSObject, NSMenuDelegate {
     private var item: NSStatusItem?
     private let showSettings: () -> Void
@@ -101,18 +130,21 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
         let tracked = Registry.tracked
         let active = tracked.filter(Registry.isActive)
-        let summary: String
+        let inactive = tracked.count - active.count
+
+        // One short line however many extensions there are; the full list is in
+        // its submenu, which scrolls if it gets long.
+        let info = NSMenuItem(title: MenuSummary.line(active: active, tracked: tracked), action: nil, keyEquivalent: "")
         if tracked.isEmpty {
-            summary = "No extensions yet"
+            info.isEnabled = false
         } else {
-            summary = active.isEmpty ? "No extensions active" : active.map { ".\($0)" }.joined(separator: ", ")
+            info.submenu = extensionsSubmenu(tracked)
         }
-        let info = NSMenuItem(title: summary, action: nil, keyEquivalent: "")
-        info.isEnabled = false
         menu.addItem(info)
-        if active.count < tracked.count {
-            let warn = NSMenuItem(title: "\(tracked.count - active.count) need re-enabling in Settings", action: nil, keyEquivalent: "")
-            warn.isEnabled = false
+        if inactive > 0 {
+            let warn = makeItem(MenuSummary.warning(inactive: inactive), #selector(openSettings))
+            warn.image = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "Warning")
+            if #available(macOS 27.0, *) { warn.preferredImageVisibility = .visible }
             menu.addItem(warn)
         }
 
@@ -130,6 +162,25 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(makeItem("Hide Menu Bar Icon", #selector(hideIcon)))
         menu.addItem(.separator())
         menu.addItem(makeItem("Quit", #selector(quit), key: "q"))
+    }
+
+    /// Every managed extension, one per row; problems show what opens them now.
+    private func extensionsSubmenu(_ tracked: [String]) -> NSMenu {
+        let sub = NSMenu()
+        for ext in tracked {
+            let item: NSMenuItem
+            if Registry.isActive(ext) {
+                item = makeItem("." + ext, #selector(openSettings))
+            } else {
+                let handler = Registry.currentHandler(forExtension: ext).map(Registry.appName) ?? "no app"
+                item = makeItem("." + ext + " (opens in " + handler + ")", #selector(openSettings))
+                item.image = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "Warning")
+                if #available(macOS 27.0, *) { item.preferredImageVisibility = .visible }
+            }
+            item.toolTip = "Open Settings"
+            sub.addItem(item)
+        }
+        return sub
     }
 
     private func makeItem(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
