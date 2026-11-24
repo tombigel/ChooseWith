@@ -185,8 +185,9 @@ struct SettingsView: View {
                 .help("How Choose With works")
                 .accessibilityLabel("Help")
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 14)
+            .frame(height: WindowSize.footerHeight)
+            .padding(.horizontal, WindowSize.edgeInset)
+            .padding(.bottom, WindowSize.edgeInset)
         }
         .frame(width: WindowSize.settings.width, height: WindowSize.settings.height)
         .onReceive(model.$customizeRequest) { ext in
@@ -347,6 +348,11 @@ enum WindowSize {
     static let helpWidth: CGFloat = 520
     static let sheetWidth: CGFloat = 480
     static let splashWidth: CGFloat = 420
+    /// Side and bottom margin for window footers, the same in every window so
+    /// buttons line up when windows sit side by side.
+    static let edgeInset: CGFloat = 20
+    /// Height of the footer row of buttons in every window.
+    static let footerHeight: CGFloat = 28
 }
 
 /// Small icon-only button for list rows: a soft highlight (and optional tint) on

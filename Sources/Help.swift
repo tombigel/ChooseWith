@@ -70,7 +70,7 @@ struct HelpView: View {
     @State private var settingsOpen = WindowState.settingsOpen
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 14) {
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable().frame(width: 56, height: 56)
@@ -99,6 +99,9 @@ struct HelpView: View {
                 tip("menubar.rectangle", "Choose With runs in the background. Turn on **Start at login** so the menu is always instant.")
             }
 
+            // Pins the footer to the window's bottom edge, level with Settings'.
+            Spacer(minLength: 0)
+
             Toggle("Show this when opening Choose With", isOn: Binding(
                 get: { showOnLaunch },
                 set: { showOnLaunch = $0; Prefs.showHelpOnLaunch = $0 }))
@@ -107,17 +110,18 @@ struct HelpView: View {
                     showOnLaunch = Prefs.showHelpOnLaunch
                 }
 
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Made by \(Credits.author) · Version \(Credits.version)")
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 4) {
-                        Link(Credits.websiteName, destination: Credits.website)
-                        Text("·").foregroundStyle(.secondary)
-                        Link("GitHub", destination: Credits.repo)
-                        Text("·").foregroundStyle(.secondary)
-                        Link("Report a bug", destination: Credits.bugReport)
-                    }
+            Text("Made by \(Credits.author) · Version \(Credits.version)")
+                .font(.callout).foregroundStyle(.secondary)
+
+            // One footer row, the same height and bottom margin as Settings', so the
+            // buttons line up when the two windows sit side by side.
+            HStack(alignment: .center) {
+                HStack(spacing: 4) {
+                    Link(Credits.websiteName, destination: Credits.website)
+                    Text("·").foregroundStyle(.secondary)
+                    Link("GitHub", destination: Credits.repo)
+                    Text("·").foregroundStyle(.secondary)
+                    Link("Report a bug", destination: Credits.bugReport)
                 }
                 .font(.callout)
                 Spacer()
@@ -130,9 +134,11 @@ struct HelpView: View {
                 Button("Done") { close() }
                     .keyboardShortcut(.defaultAction)
             }
+            .frame(height: WindowSize.footerHeight)
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 18)
+        .padding(.horizontal, WindowSize.edgeInset)
+        .padding(.top, 16)
+        .padding(.bottom, WindowSize.edgeInset)
         // Same height as Settings, so the two line up side by side.
         .frame(width: WindowSize.helpWidth, height: WindowSize.settings.height, alignment: .top)
         .onReceive(NotificationCenter.default.publisher(for: .owpSettingsVisibility)) { _ in
@@ -143,7 +149,7 @@ struct HelpView: View {
     }
 
     private func section<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title).font(.headline)
             content()
         }
