@@ -70,21 +70,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var receivedFiles = false
     private var settings: SettingsWindowController?
     private var menuBar: MenuBarController?
-
+    private var help: HelpWindowController?
+    private var splash: SplashController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = makeMainMenu()
         menuBar = MenuBarController { [weak self] in self?.showSettings() }
+        NotificationCenter.default.addObserver(self, selector: #selector(showHelp), name: .owpShowHelp, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(showSettings), name: .owpShowSettings, object: nil)
         // Started at login: stay quietly in the background so the popup is instant.
         let launchEvent = NSAppleEventManager.shared().currentAppleEvent
         if launchEvent?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem {
             return
         }
         // Launched by opening files, the open event usually arrives first; give it a
-        // moment anyway. Launched directly (no files): show Settings.
+        // moment anyway. Launched directly (no files): show Settings, plus Help the
+        // very first time.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
             guard let self, !self.receivedFiles else { return }
-            self.showSettings()
+            let splash = SplashController()
+            self.splash = splash
+            splash.show { [weak self] in
+                guard let self else { return }
+                self.splash = nil
+                self.showSettings()
+                if !UserDefaults.standard.bool(forKey: "helpShown") {
+                    UserDefaults.standard.set(true, forKey: "helpShown")
+                    self.showHelp()
+                }
+            }
         }
     }
 
@@ -103,14 +117,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    @objc func showAbout() { Credits.showAboutPanel() }
+
+    @objc func showHelp() {
+        if help == nil {
+            help = HelpWindowController()
+            help?.window?.delegate = self
+        }
+        NSApp.setActivationPolicy(.regular)
+        help?.show()
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
     func windowWillClose(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        // Back to a background app (no Dock icon) once no window of ours is left open.
+        let closing = notification.object as? NSWindow
+        let othersOpen = [settings?.window, help?.window].contains { $0 != nil && $0 !== closing && $0!.isVisible }
+        if !othersOpen { NSApp.setActivationPolicy(.accessory) }
     }
 
     private func makeMainMenu() -> NSMenu {
         let main = NSMenu()
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "About Open With Popup", action: #selector(showAbout), keyEquivalent: "").target = self
+        appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",").target = self
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Quit Open With Popup", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -135,6 +166,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         window.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")
         windowItem.submenu = window
         main.addItem(windowItem)
+
+        let helpItem = NSMenuItem()
+        let helpMenu = NSMenu(title: "Help")
+        helpMenu.addItem(withTitle: "Open With Popup Help", action: #selector(showHelp), keyEquivalent: "?").target = self
+        helpItem.submenu = helpMenu
+        main.addItem(helpItem)
+        NSApp.helpMenu = helpMenu
         return main
     }
 

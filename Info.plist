@@ -20,6 +20,8 @@
 	<string>13.0</string>
 	<key>CFBundleIconFile</key>
 	<string>AppIcon</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 Tom Bigelajzen</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSPrincipalClass</key>

@@ -32,6 +32,10 @@ A **menu bar icon** shows which extensions are active and has Settings, Start at
 Login, Hide Menu Bar Icon and Quit. Hide or show it from the menu or in Settings;
 when it's hidden, open the app again to get back to Settings.
 
+**Help** (Help menu, ⌘?, "How It Works…" in the menu bar menu, or the **?** button in
+Settings) explains how it works; it also opens on first launch. Opening the app
+directly shows a short splash screen; starting at login or opening a file never does.
+
 ## Command line
 
 ```bash

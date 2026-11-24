@@ -141,6 +141,15 @@ struct SettingsView: View {
                 Spacer()
                 Button("Refresh") { model.reload() }
                     .controlSize(.small)
+                Button {
+                    NotificationCenter.default.post(name: .owpShowHelp, object: nil)
+                } label: {
+                    Image(systemName: "questionmark")
+                }
+                .buttonStyle(.bordered)
+                .clipShape(Circle())
+                .controlSize(.small)
+                .help("How Open With Popup works")
             }
         }
         .padding(16)
