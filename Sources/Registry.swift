@@ -114,13 +114,55 @@ enum Registry {
     static func register(_ raw: String) -> String? {
         if let err = validationError(raw) { return err }
         let ext = normalize(raw)
-        if let prev = currentHandler(forExtension: ext),
+        // Remember the app to hand the extension back to on removal. If it's already
+        // managed (Re-enable after a takeover), keep the original: the current
+        // handler is just the app that grabbed it.
+        let alreadyManaged = tracked.contains(ext) && previousHandler(forExtension: ext) != nil
+        if !alreadyManaged, let prev = currentHandler(forExtension: ext),
            prev.caseInsensitiveCompare(selfBundleID) != .orderedSame {
             defaults.set(prev, forKey: "previous." + ext)
         }
         if let err = setDefault(bundleID: selfBundleID, forExtension: ext) { return err }
         tracked = tracked + [ext]
+        clearNotes(ext)
         return nil
+    }
+
+    // MARK: Take-back notes
+
+    /// Shown in Settings: "Taken back from Inkscape".
+    static func setTakenBackNote(_ ext: String, from app: String) {
+        defaults.set(app, forKey: "takenBackFrom." + normalize(ext))
+    }
+
+    static func takenBackFrom(_ ext: String) -> String? {
+        defaults.string(forKey: "takenBackFrom." + normalize(ext))
+    }
+
+    /// An app kept re-claiming this extension, so Choose With stopped taking it back.
+    static func setGaveUp(_ ext: String, takerName: String) {
+        defaults.set(takerName, forKey: "gaveUpTo." + normalize(ext))
+    }
+
+    static func gaveUp(_ ext: String) -> Bool { gaveUpTo(ext) != nil }
+
+    static func gaveUpTo(_ ext: String) -> String? {
+        defaults.string(forKey: "gaveUpTo." + normalize(ext))
+    }
+
+    /// The user chose "Leave It" for this app; don't ask again unless another app takes over.
+    static func setLeftTo(_ ext: String, app: String) {
+        defaults.set(app, forKey: "leftTo." + normalize(ext))
+    }
+
+    static func leftTo(_ ext: String) -> String? {
+        defaults.string(forKey: "leftTo." + normalize(ext))
+    }
+
+    private static func clearNotes(_ ext: String) {
+        for key in ["takenBackFrom.", "gaveUpTo.", "leftTo."] {
+            defaults.removeObject(forKey: key + normalize(ext))
+        }
     }
 
     /// Gives an extension back to its previous default (or the first other app that
@@ -134,6 +176,7 @@ enum Registry {
             if let err = setDefault(bundleID: target, forExtension: ext) { return err }
         }
         defaults.removeObject(forKey: "previous." + ext)
+        clearNotes(ext)
         tracked = tracked.filter { $0 != ext }
         return nil
     }

@@ -9,6 +9,7 @@ final class SettingsModel: ObservableObject {
         let active: Bool
         let handlerName: String?
         let appSummary: String?    // "8 of 23 apps" when customized
+        let note: String?          // take-back history, e.g. "Taken back from Inkscape"
         var id: String { ext }
     }
 
@@ -25,6 +26,11 @@ final class SettingsModel: ObservableObject {
             self?.showMenuBarIcon = Prefs.showMenuBarIcon
             self?.showSplash = Prefs.showSplash
             self?.showHelpOnLaunch = Prefs.showHelpOnLaunch
+            self?.takeoverPolicy = Prefs.takeoverPolicy
+            self?.reload()
+        }
+        NotificationCenter.default.addObserver(forName: .owpCustomizeExtension, object: nil, queue: .main) { [weak self] note in
+            self?.customizeRequest = note.object as? String
         }
         // Apps may have been installed or removed, or defaults changed, while away.
         NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
@@ -33,6 +39,9 @@ final class SettingsModel: ObservableObject {
     }
 
     @Published var showMenuBarIcon = Prefs.showMenuBarIcon
+    @Published var takeoverPolicy = Prefs.takeoverPolicy
+    /// Set when the menu bar asks for one extension's Customize sheet.
+    @Published var customizeRequest: String?
     @Published var showSplash = Prefs.showSplash
     @Published var showHelpOnLaunch = Prefs.showHelpOnLaunch
 
@@ -56,8 +65,16 @@ final class SettingsModel: ObservableObject {
                 let (shown, hidden) = AppLists.arrange(AppLists.apps(forExtension: ext), ext: ext)
                 summary = "\(shown.count) of \(shown.count + hidden.count) apps"
             }
+            var note: String? = nil
+            if let taker = Registry.gaveUpTo(ext) {
+                note = taker + " keeps taking it"
+            } else if let app = Registry.leftTo(ext) {
+                note = "Left to " + app
+            } else if let from = Registry.takenBackFrom(ext) {
+                note = "Taken back from " + from
+            }
             return Row(ext: ext, active: Registry.isActive(ext), handlerName: handler.map(Registry.appName),
-                       appSummary: summary)
+                       appSummary: summary, note: note)
         }
     }
 
@@ -115,6 +132,11 @@ struct SettingsView: View {
                             Button("Re-enable") { model.reenable(row.ext) }
                                 .controlSize(.small)
                         }
+                        if let note = row.note {
+                            Text(verbatim: note)
+                                .font(.caption).foregroundStyle(.secondary)
+                                .lineLimit(1).truncationMode(.middle)
+                        }
                         Spacer()
                         if let summary = row.appSummary {
                             Text(summary).font(.caption).foregroundStyle(.secondary)
@@ -136,6 +158,11 @@ struct SettingsView: View {
             }
             .listStyle(.bordered(alternatesRowBackgrounds: true))
             .frame(minHeight: 180)
+            .onReceive(model.$customizeRequest) { ext in
+                guard let ext else { return }
+                customizing = CustomizeTarget(ext: ext)
+                model.customizeRequest = nil
+            }
             .sheet(item: $customizing) { target in
                 CustomizeView(model: CustomizeModel(ext: target.ext)) {
                     customizing = nil
@@ -155,6 +182,20 @@ struct SettingsView: View {
             Toggle("Start at login, so the menu appears instantly", isOn: Binding(
                 get: { model.launchAtLogin },
                 set: { model.setLaunchAtLogin($0) }))
+            HStack(alignment: .firstTextBaseline) {
+                Text("If another app claims an extension:")
+                Picker("If another app claims an extension", selection: Binding(
+                    get: { model.takeoverPolicy },
+                    set: { Prefs.takeoverPolicy = $0; TakeoverGuard.shared.check() })) {
+                    Text("Keep Choose With").tag(Prefs.TakeoverPolicy.keep)
+                    Text("Ask me").tag(Prefs.TakeoverPolicy.ask)
+                    Text("Do nothing").tag(Prefs.TakeoverPolicy.nothing)
+                }
+                .pickerStyle(.radioGroup)
+                .horizontalRadioGroupLayout()
+                .labelsHidden()
+            }
+            .help("Apps you install can ask to become the default for a file type. Keep switches it back automatically; Ask lets you decide each time.")
             Toggle("Show icon in menu bar", isOn: Binding(
                 get: { model.showMenuBarIcon },
                 set: { model.setShowMenuBarIcon($0) }))
@@ -231,9 +272,9 @@ final class SettingsWindowController: NSWindowController {
         window.center()
         window.setFrameAutosaveName("SettingsWindow")
         // Room for the Customize buttons, even if a smaller size was saved earlier.
-        window.contentMinSize = NSSize(width: 540, height: 500)
-        if window.frame.width < 560 || window.frame.height < 520 {
-            window.setContentSize(NSSize(width: 560, height: 520))
+        window.contentMinSize = NSSize(width: 600, height: 520)
+        if window.frame.width < 600 || window.frame.height < 540 {
+            window.setContentSize(NSSize(width: 620, height: 560))
             window.center()
         }
         self.init(window: window)

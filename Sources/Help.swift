@@ -52,6 +52,8 @@ extension Notification.Name {
     /// Posted by any view or menu that wants the Help or Settings window shown.
     static let owpShowHelp = Notification.Name("ChooseWithShowHelp")
     static let owpShowSettings = Notification.Name("ChooseWithShowSettings")
+    /// Opens Settings at one extension's Customize sheet; `object` is the extension.
+    static let owpCustomizeExtension = Notification.Name("ChooseWithCustomizeExtension")
 }
 
 struct HelpView: View {
@@ -83,6 +85,7 @@ struct HelpView: View {
                 tip("doc.on.doc", "Select several files to open them together. Only apps that can open all of them are listed.")
                 tip("ellipsis.circle", "**Other…** picks any app. **Show in Finder** reveals the files.")
                 tip("arrow.uturn.backward", "Removing an extension gives it back to the app that opened it before.")
+                tip("arrow.uturn.left.circle", "If another app becomes the default for one of your extensions, Choose With asks whether to take it back. You can change this in Settings.")
                 tip("hand.raised", "Apps, folders, disks, aliases and links can’t be added, so opening them always works as usual.")
                 tip("menubar.rectangle", "Choose With runs in the background. Turn on **Start at login** so the menu is always instant.")
             }

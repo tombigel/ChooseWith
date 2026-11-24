@@ -28,7 +28,12 @@ Open **Choose With** directly (Spotlight, `~/Applications`, or ⌘, while it's
 running, or the last item in any popup) to add and remove extensions. The pencil next to an extension lets you reorder its
 apps and hide the ones you don't need (they move under **More Apps**). Removing an
 extension gives it back to the app that opened it before. Apps, folders, disks,
-aliases and links can't be added, so opening them always works as usual. macOS may ask you to
+aliases and links can't be added, so opening them always works as usual.
+
+If another app becomes the default for one of your extensions (an app you install
+can ask for this), Choose With can **keep** it (switch back automatically; it stops
+if an app re-claims the same extension 3 times in an hour), **ask** you (the
+default), or **do nothing**. macOS may ask you to
 confirm each change of default app.
 
 After first use the app keeps running in the background (no Dock icon), so the menu

@@ -24,6 +24,21 @@ enum Prefs {
         set { setFlag("showSplash", newValue) }
     }
 
+    /// What to do when another app becomes the default for a managed extension.
+    enum TakeoverPolicy: String, CaseIterable {
+        case keep, ask, nothing
+    }
+
+    /// Ask by default: on macOS 27 a takeover needs the user's OK, so it may be
+    /// intentional; asking neither fights it silently nor ignores it.
+    static var takeoverPolicy: TakeoverPolicy {
+        get { TakeoverPolicy(rawValue: UserDefaults.standard.string(forKey: "takeoverPolicy") ?? "") ?? .ask }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: "takeoverPolicy")
+            NotificationCenter.default.post(name: .owpPrefsChanged, object: nil)
+        }
+    }
+
     /// Help window after the splash when the app is opened directly. On by default.
     static var showHelpOnLaunch: Bool {
         get { flag("showHelpOnLaunch") }
@@ -170,14 +185,15 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         for ext in tracked {
             let item: NSMenuItem
             if Registry.isActive(ext) {
-                item = makeItem("." + ext, #selector(openSettings))
+                item = makeItem("." + ext, #selector(openExtension(_:)))
             } else {
                 let handler = Registry.currentHandler(forExtension: ext).map(Registry.appName) ?? "no app"
-                item = makeItem("." + ext + " (opens in " + handler + ")", #selector(openSettings))
+                item = makeItem("." + ext + " (opens in " + handler + ")", #selector(openExtension(_:)))
                 item.image = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "Warning")
                 if #available(macOS 27.0, *) { item.preferredImageVisibility = .visible }
             }
-            item.toolTip = "Open Settings"
+            item.representedObject = ext
+            item.toolTip = "Customize apps for ." + ext
             sub.addItem(item)
         }
         return sub
@@ -190,6 +206,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     @objc private func openSettings() { showSettings() }
+
+    @objc private func openExtension(_ sender: NSMenuItem) {
+        guard let ext = sender.representedObject as? String else { return }
+        showSettings()
+        NotificationCenter.default.post(name: .owpCustomizeExtension, object: ext)
+    }
 
     @objc private func openAbout() { Credits.showAboutPanel() }
     @objc private func openRepo() { Credits.openRepo() }

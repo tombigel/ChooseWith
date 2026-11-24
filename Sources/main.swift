@@ -83,6 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = makeMainMenu()
         menuBar = MenuBarController { [weak self] in self?.showSettings() }
+        TakeoverGuard.shared.start()
         NotificationCenter.default.addObserver(self, selector: #selector(showHelp), name: .owpShowHelp, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(showSettings), name: .owpShowSettings, object: nil)
         // Started at login: stay quietly in the background so the popup is instant.
