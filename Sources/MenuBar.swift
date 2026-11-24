@@ -120,8 +120,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(makeItem("Settings…", #selector(openSettings), key: ","))
         menu.addItem(.separator())
         menu.addItem(makeItem("How it works?", #selector(openHelp)))
-        menu.addItem(makeItem("About Choose With", #selector(openAbout)))
-        menu.addItem(makeItem("Choose With on GitHub", #selector(openRepo)))
+        menu.addItem(makeItem("About", #selector(openAbout)))
+        menu.addItem(makeItem("GitHub", #selector(openRepo)))
         menu.addItem(makeItem("Report a Bug…", #selector(reportBug)))
         menu.addItem(.separator())
         let login = makeItem("Start at Login", #selector(toggleLogin))
@@ -129,7 +129,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(login)
         menu.addItem(makeItem("Hide Menu Bar Icon", #selector(hideIcon)))
         menu.addItem(.separator())
-        menu.addItem(makeItem("Quit Choose With", #selector(quit), key: "q"))
+        menu.addItem(makeItem("Quit", #selector(quit), key: "q"))
     }
 
     private func makeItem(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {

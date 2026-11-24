@@ -179,7 +179,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let helpMenu = NSMenu(title: "Help")
         helpMenu.addItem(withTitle: "Choose With Help", action: #selector(showHelp), keyEquivalent: "?").target = self
         helpMenu.addItem(.separator())
-        helpMenu.addItem(withTitle: "Choose With on GitHub", action: #selector(openRepo), keyEquivalent: "").target = self
+        helpMenu.addItem(withTitle: "GitHub", action: #selector(openRepo), keyEquivalent: "").target = self
         helpMenu.addItem(withTitle: "Report a Bug…", action: #selector(reportBug), keyEquivalent: "").target = self
         helpItem.submenu = helpMenu
         main.addItem(helpItem)
