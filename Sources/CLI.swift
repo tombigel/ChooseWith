@@ -23,6 +23,11 @@ Takeovers
   --take-back on|off             take extensions back automatically
   --take-back-now                take back every extension another app claimed
 
+Export / Import (to move your setup between Macs)
+  --export [file]                write settings as JSON (to the terminal if no file)
+  --import file [--dry-run]      replace this Mac's setup with the file's;
+                                 --dry-run only shows what would change
+
 Settings
   --login on|off                 start at login
   --menubar on|off               menu bar icon
@@ -147,6 +152,38 @@ func runCLI(_ args: [String]) -> Int32? {
         guard let raw = rest.first, Registry.validationError(raw) == nil else { print("usage: --reset ext"); return 2 }
         AppLists.reset(raw)
         printList(Registry.normalize(raw)); code = 0
+
+    case "--export":
+        do {
+            let data = try ConfigIO.exportData()
+            if let path = rest.first, path != "-" {
+                try data.write(to: URL(fileURLWithPath: path), options: .atomic)
+                print("Exported to " + path)
+            } else {
+                FileHandle.standardOutput.write(data)
+                print("")
+            }
+            return 0
+        } catch {
+            print("✗ " + error.localizedDescription); return 1
+        }
+    case "--import":
+        guard let path = rest.first(where: { !$0.hasPrefix("--") }) else { print("usage: --import file [--dry-run]"); return 2 }
+        let config: ChooseWithConfig
+        do {
+            config = try ConfigIO.load(ConfigIO.read(URL(fileURLWithPath: path)))
+        } catch {
+            print("✗ " + error.localizedDescription); return 1
+        }
+        let changes = ConfigIO.changes(config)
+        if changes.isEmpty { print("Nothing to change: this Mac already matches the file."); return 0 }
+        if rest.contains("--dry-run") {
+            print("Would:"); changes.forEach { print("  • " + $0) }; return 0
+        }
+        changes.forEach { print("• " + $0) }
+        let errors = ConfigIO.apply(config)
+        errors.forEach { print("✗ " + $0) }
+        code = errors.isEmpty ? 0 : 1
 
     case "--take-back":
         guard let on = onOff(rest, cmd, now: Prefs.takeBackExtensions) else { return 2 }

@@ -55,6 +55,55 @@ final class SettingsModel: ObservableObject {
         message = on ? "Menu bar icon shown." : "Menu bar icon hidden. Open the app again to get back here."
     }
 
+    // MARK: Export / Import
+
+    func exportSettings() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "Choose With Settings.json"
+        panel.allowedContentTypes = [.json]
+        panel.message = "Save your extensions, app lists and settings to a file you can import on another Mac."
+        panel.prompt = "Export"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try ConfigIO.exportData().write(to: url, options: .atomic)
+            message = "Exported to " + url.lastPathComponent
+        } catch {
+            message = "Couldn’t export: " + error.localizedDescription
+        }
+    }
+
+    func importSettings() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        panel.message = "Choose a Choose With settings file. You’ll see what changes before anything is applied."
+        panel.prompt = "Import"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let config: ChooseWithConfig
+        do {
+            config = try ConfigIO.load(ConfigIO.read(url))
+        } catch {
+            let alert = NSAlert()
+            alert.alertStyle = .warning
+            alert.messageText = "Couldn’t import “\(MenuText.safeFileName(url.lastPathComponent))”"
+            alert.informativeText = error.localizedDescription
+            alert.runModal()
+            return
+        }
+        let changes = ConfigIO.changes(config)
+        guard !changes.isEmpty else { message = "Nothing to change: this Mac already matches the file."; return }
+        let alert = NSAlert()
+        alert.messageText = "Import settings from “\(MenuText.safeFileName(url.lastPathComponent))”?"
+        alert.informativeText = "This will:\n" + changes.map { "• " + $0 }.joined(separator: "\n")
+        alert.addButton(withTitle: "Import")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let errors = ConfigIO.apply(config)
+        message = errors.isEmpty ? "Imported settings." : errors.joined(separator: "\n")
+        reload()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.reload() }
+    }
+
     func reload() {
         launchAtLogin = LoginItem.isEnabled
         showMenuBarIcon = Prefs.showMenuBarIcon
@@ -117,6 +166,10 @@ struct SettingsView: View {
             .formStyle(.grouped)
 
             HStack(alignment: .center) {
+                Button("Export…") { model.exportSettings() }
+                    .help("Save your extensions, app lists and settings to a file")
+                Button("Import…") { model.importSettings() }
+                    .help("Load settings from a file exported on this or another Mac")
                 if let message = model.message {
                     Text(message).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -135,7 +188,7 @@ struct SettingsView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 14)
         }
-        .frame(minWidth: 540, minHeight: 520)
+        .frame(width: WindowSize.settings.width, height: WindowSize.settings.height)
         .onReceive(model.$customizeRequest) { ext in
             guard let ext else { return }
             customizing = CustomizeTarget(ext: ext)
@@ -286,6 +339,16 @@ struct SettingsView: View {
     }
 }
 
+/// Window sizes, kept in proportion: Settings is the main window, Help a slightly
+/// narrower companion, the Customize sheet fits inside Settings with even margins,
+/// and the splash is the smallest.
+enum WindowSize {
+    static let settings = NSSize(width: 600, height: 680)
+    static let helpWidth: CGFloat = 520
+    static let sheetWidth: CGFloat = 480
+    static let splashWidth: CGFloat = 420
+}
+
 /// Small icon-only button for list rows: a soft highlight (and optional tint) on
 /// hover, a tooltip, and a spoken label for VoiceOver.
 struct IconButton: View {
@@ -318,20 +381,17 @@ final class SettingsWindowController: NSWindowController {
     let model = SettingsModel()
 
     convenience init() {
+        // Fixed size, like other Mac settings windows; the form scrolls if the
+        // extension list grows.
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 520),
-            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            contentRect: NSRect(origin: .zero, size: WindowSize.settings),
+            styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered, defer: false)
         window.title = "Choose With Settings"
         window.isReleasedWhenClosed = false
         window.center()
-        window.setFrameAutosaveName("SettingsWindow")
-        // Room for the Customize buttons, even if a smaller size was saved earlier.
-        window.contentMinSize = NSSize(width: 560, height: 560)
-        if window.frame.width < 560 || window.frame.height < 600 {
-            window.setContentSize(NSSize(width: 600, height: 680))
-            window.center()
-        }
+        window.setFrameAutosaveName("SettingsWindow")   // remembers position
+        window.setContentSize(WindowSize.settings)       // ignore any older saved size
         self.init(window: window)
         window.contentView = NSHostingView(rootView: SettingsView(model: model))
     }

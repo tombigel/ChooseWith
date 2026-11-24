@@ -132,7 +132,7 @@ struct CustomizeView: View {
                 .onMove { model.items.move(fromOffsets: $0, toOffset: $1) }
             }
             .listStyle(.bordered(alternatesRowBackgrounds: true))
-            .frame(minHeight: 320)
+            .frame(height: 340)
             .accessibilityLabel(Text(verbatim: "Apps for ." + model.ext))
 
             Text(verbatim: "\(model.shownCount) of \(model.items.count) apps in the menu. Your order replaces “last used first” for .\(model.ext).")
@@ -151,7 +151,7 @@ struct CustomizeView: View {
             }
         }
         .padding(18)
-        .frame(width: 460)
+        .frame(width: WindowSize.sheetWidth)
     }
 }
 

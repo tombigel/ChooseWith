@@ -19,7 +19,7 @@ struct SplashView: View {
                 .padding(.top, 6)
         }
         .padding(.horizontal, 48).padding(.vertical, 36)
-        .frame(width: 420)
+        .frame(width: WindowSize.splashWidth)
         .background(
             VisualEffect().clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous)))
         .overlay(

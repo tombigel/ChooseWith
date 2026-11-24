@@ -5,14 +5,20 @@
 The name is a twist on the Finder's **Open With** menu. Normally a file opens with
 one fixed app; with Choose With, you choose what it opens with, every time.
 
-A tiny macOS app that turns "Open With" into a popup. Make it the default app for
-any file extensions you choose; opening one of those files (double-click, Return,
-`open file.ext`) shows a menu at the mouse pointer with every app that can open it.
+Choose With is a small macOS app. Make it the default for the file extensions you
+pick, and opening one of those files (double-click, ⌘↓, or `open file.ext`) shows a
+menu at your pointer with every app that can open it.
 
-- Return picks the first app; number keys 1–9 pick the first nine
-- The app you last chose for an extension moves to the top
-- Multi-file selections list only apps that can open all of them
-- "Other…" picks any app; "Show in Finder" reveals the files
+## Using the menu
+
+- **Return** opens the first app (it starts highlighted); **1–9** pick the first nine;
+  **Esc** cancels.
+- The app you chose last for an extension is listed first, unless you've set your
+  own order for it.
+- Apps you've hidden are one step away under **More Apps**.
+- Select several files to open them together; only apps that can open all of them
+  are listed.
+- **Other…** picks any app; **Show in Finder** reveals the files.
 
 ## Install
 
@@ -20,39 +26,61 @@ any file extensions you choose; opening one of those files (double-click, Return
 ./build.sh
 ```
 
-Builds `ChooseWith.app` and installs it to `~/Applications`.
+Builds `ChooseWith.app` and installs it to `~/Applications`. Requires macOS 13 or
+later.
 
 ## Settings
 
-Open **Choose With** directly (Spotlight, `~/Applications`, or ⌘, while it's
-running, or the last item in any popup) to add and remove extensions. The pencil next to an extension lets you reorder its
-apps and hide the ones you don't need (they move under **More Apps**). Removing an
-extension gives it back to the app that opened it before. Apps, folders, disks,
-aliases and links can't be added, so opening them always works as usual.
+Open **Choose With** (Spotlight or `~/Applications`), press ⌘, while it's running,
+or choose **Choose With Settings…** at the bottom of any menu.
 
-If another app makes itself the default for one of your extensions, the menu bar
-icon turns orange with a count, and Settings shows a banner with **Take Back**. Turn
-on **Take extensions back if another app claims them** to do it automatically; you
-get a quiet notification each time (it stops if an app re-claims the same extension
-3 times in an hour). macOS may ask you to
-confirm each change of default app.
+**Extensions**
+- Add extensions in the field at the bottom of the list (`md, txt, json`).
+- The **pencil** next to an extension opens its app list: drag apps to reorder them
+  (or right-click for Move to Top / Up / Down / Bottom), and untick the ones you
+  don't need so they move under **More Apps**. **Show All**, **Hide All** and
+  **Reset** are at the bottom.
+- The **trash** removes an extension and gives it back to the app that opened it
+  before.
+- Apps, folders, disks, aliases and links can't be added, so opening them always
+  works as usual.
 
-After first use the app keeps running in the background (no Dock icon), so the menu
-appears instantly. Turn on **Start at login** in Settings to keep it ready after a
-restart.
+**Behavior**
+- **Start at login** keeps the menu instant after a restart. Choose With runs in
+  the background without a Dock icon.
+- **Take extensions back if another app claims them.** Apps can make themselves the
+  default for a file type. With this off, Choose With warns you: the menu bar icon
+  turns orange with a count, and Settings shows a banner with **Take Back**. With
+  it on, Choose With switches them back automatically, posts a quiet notification,
+  and notes it on the extension's row (it stops if an app re-claims the same
+  extension 3 times in an hour).
 
-A **menu bar icon** shows which extensions are active and has Settings, Start at
-Login, Hide Menu Bar Icon and Quit. Hide or show it from the menu or in Settings;
-when it's hidden, open the app again to get back to Settings.
+**Appearance**
+- Show or hide the menu bar icon, the splash screen, and Help when opening Choose
+  With.
 
-**Help** (Help menu, ⌘?, "How it works?" in the menu bar menu, or the **?** button in
-Settings) explains how it works; it also opens on first launch. Opening the app
-directly shows a short splash screen; starting at login or opening a file never does.
+**Export / Import**
+- **Export…** saves your extensions, app lists and settings to a JSON file you can
+  keep with your dotfiles, put in iCloud Drive, or import on another Mac.
+- **Import…** shows exactly what will change before applying anything. It replaces
+  this Mac's setup with the file's.
+- Per-Mac things aren't included: Start at login, which app each extension goes back
+  to, and take-back history.
+- An imported file is treated as untrusted: only regular files up to 1 MB are read,
+  and every extension and app ID is validated. Nothing in it is ever run.
+
+## Menu bar icon
+
+Shows your active extensions (the full list in a submenu; click one to customize
+it), and has Settings, How it works?, About, GitHub, Report a Bug, Start at Login,
+Hide Menu Bar Icon and Quit. When another app has taken an extension, the icon turns
+orange and the menu offers **Take Back**. When the icon is hidden, open the app
+again to get back to Settings.
 
 ## Command line
 
-Everything in Settings is also available from the terminal. `./choosewith --help`
-lists it all:
+Everything in Settings is also available from the terminal; a running copy of the
+app picks up changes right away. `./choosewith --help` lists every option:
 
 ```bash
 ./choosewith --register md txt          # use the menu for these extensions
@@ -68,13 +96,15 @@ lists it all:
 ./choosewith --take-back on             # take extensions back automatically
 ./choosewith --take-back-now            # reclaim anything another app took
 
+./choosewith --export settings.json     # save your setup (no file: print it)
+./choosewith --import settings.json --dry-run   # show what would change
+./choosewith --import settings.json     # apply it
+
 ./choosewith --login on                 # start at login
 ./choosewith --menubar off              # hide the menu bar icon
 ./choosewith --splash off               # no splash screen
 ./choosewith --help-on-launch off       # no Help window on open
 ```
-
-A running copy of the app picks up changes right away.
 
 ## Signing and releases
 

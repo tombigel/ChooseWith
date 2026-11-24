@@ -52,16 +52,25 @@ extension Notification.Name {
     /// Posted by any view or menu that wants the Help or Settings window shown.
     static let owpShowHelp = Notification.Name("ChooseWithShowHelp")
     static let owpShowSettings = Notification.Name("ChooseWithShowSettings")
+    static let owpSettingsVisibility = Notification.Name("ChooseWithSettingsVisibility")
     /// Opens Settings at one extension's Customize sheet; `object` is the extension.
     static let owpCustomizeExtension = Notification.Name("ChooseWithCustomizeExtension")
+}
+
+/// Whether the Settings window is open, so Help can hide its "Open Settings" button.
+enum WindowState {
+    static var settingsOpen = false {
+        didSet { NotificationCenter.default.post(name: .owpSettingsVisibility, object: nil) }
+    }
 }
 
 struct HelpView: View {
     var close: () -> Void
     @State private var showOnLaunch = Prefs.showHelpOnLaunch
+    @State private var settingsOpen = WindowState.settingsOpen
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 14) {
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable().frame(width: 56, height: 56)
@@ -80,12 +89,12 @@ struct HelpView: View {
 
             section("Tips") {
                 tip("keyboard", "Press **Return** for the first app, **1–9** to pick another, or **Esc** to cancel.")
-                tip("arrow.up.to.line", "The app you chose last for each extension is listed first.")
-                tip("slider.horizontal.3", "Too many apps? Click the pencil next to an extension in Settings to reorder them and hide the ones you don’t need.")
+                tip("slider.horizontal.3", "Click the pencil next to an extension in Settings to reorder its apps and hide the ones you don’t need. Until you do, the app you chose last is listed first.")
                 tip("doc.on.doc", "Select several files to open them together. Only apps that can open all of them are listed.")
                 tip("ellipsis.circle", "**Other…** picks any app. **Show in Finder** reveals the files.")
                 tip("arrow.uturn.backward", "Removing an extension gives it back to the app that opened it before.")
                 tip("arrow.uturn.left.circle", "If another app makes itself the default for one of your extensions, the menu bar icon turns orange. Take it back from there or Settings, or turn on **Take extensions back** to do it automatically.")
+                tip("square.and.arrow.up", "Moving to another Mac? **Export…** in Settings saves your setup to a file, and **Import…** loads it.")
                 tip("hand.raised", "Apps, folders, disks, aliases and links can’t be added, so opening them always works as usual.")
                 tip("menubar.rectangle", "Choose With runs in the background. Turn on **Start at login** so the menu is always instant.")
             }
@@ -112,15 +121,23 @@ struct HelpView: View {
                 }
                 .font(.callout)
                 Spacer()
-                Button("Open Settings") {
-                    NotificationCenter.default.post(name: .owpShowSettings, object: nil)
+                // Not needed while Settings is already open beside Help.
+                if !settingsOpen {
+                    Button("Open Settings") {
+                        NotificationCenter.default.post(name: .owpShowSettings, object: nil)
+                    }
                 }
                 Button("Done") { close() }
                     .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(22)
-        .frame(width: 460)
+        .padding(.horizontal, 22)
+        .padding(.vertical, 18)
+        // Same height as Settings, so the two line up side by side.
+        .frame(width: WindowSize.helpWidth, height: WindowSize.settings.height, alignment: .top)
+        .onReceive(NotificationCenter.default.publisher(for: .owpSettingsVisibility)) { _ in
+            settingsOpen = WindowState.settingsOpen
+        }
         .onExitCommand { close() }   // Esc closes, like other help windows
         .fixedSize(horizontal: false, vertical: true)
     }

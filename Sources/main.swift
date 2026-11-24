@@ -70,6 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         }
         NSApp.setActivationPolicy(.regular)
         settings?.show()
+        WindowState.settingsOpen = true
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -81,6 +82,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         if help == nil {
             help = HelpWindowController()
             help?.window?.delegate = self
+            // Opening together with Settings: put Help beside it, tops aligned, when
+            // the screen has room; otherwise offset it down and right so both show.
+            if let s = settings?.window, s.isVisible, let h = help?.window {
+                let gap: CGFloat = 16
+                let visible = (s.screen ?? NSScreen.main)?.visibleFrame ?? .zero
+                let pairWidth = s.frame.width + gap + h.frame.width
+                if pairWidth <= visible.width {
+                    // Center the pair on screen, Settings on the left.
+                    let left = visible.midX - pairWidth / 2
+                    s.setFrameTopLeftPoint(NSPoint(x: left, y: s.frame.maxY))
+                    h.setFrameTopLeftPoint(NSPoint(x: left + s.frame.width + gap, y: s.frame.maxY))
+                } else {
+                    h.setFrameTopLeftPoint(NSPoint(x: s.frame.minX + 48, y: s.frame.maxY - 48))
+                }
+            }
         }
         NSApp.setActivationPolicy(.regular)
         help?.show()
@@ -90,6 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     func windowWillClose(_ notification: Notification) {
         // Back to a background app (no Dock icon) once no window of ours is left open.
         let closing = notification.object as? NSWindow
+        if closing === settings?.window { WindowState.settingsOpen = false }
         let othersOpen = [settings?.window, help?.window].contains { $0 != nil && $0 !== closing && $0!.isVisible }
         if !othersOpen { NSApp.setActivationPolicy(.accessory) }
     }
