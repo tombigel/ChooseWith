@@ -119,22 +119,17 @@ struct SettingsView: View {
                         if let summary = row.appSummary {
                             Text(summary).font(.caption).foregroundStyle(.secondary)
                         }
-                        Button {
+                        IconButton(symbol: "pencil",
+                                   label: "Customize apps for ." + row.ext,
+                                   tooltip: "Customize apps for ." + row.ext + ": reorder and hide") {
                             customizing = CustomizeTarget(ext: row.ext)
-                        } label: {
-                            Image(systemName: "pencil")
                         }
-                        .buttonStyle(.borderless)
-                        .help(Text(verbatim: "Customize apps for ." + row.ext + ": reorder and hide"))
-                        .accessibilityLabel(Text(verbatim: "Customize apps for ." + row.ext))
-                        Button {
+                        IconButton(symbol: "trash",
+                                   label: "Remove ." + row.ext,
+                                   tooltip: "Remove ." + row.ext + " and give it back to its previous app",
+                                   hoverTint: .red) {
                             model.remove(row.ext)
-                        } label: {
-                            Image(systemName: "trash")
                         }
-                        .buttonStyle(.borderless)
-                        .help(Text(verbatim: "Remove ." + row.ext + " and give it back to its previous app"))
-                        .accessibilityLabel(Text(verbatim: "Remove ." + row.ext))
                     }
                     .padding(.vertical, 2)
                 }
@@ -192,6 +187,34 @@ struct SettingsView: View {
         }
         .padding(16)
         .frame(minWidth: 520, minHeight: 460)
+    }
+}
+
+/// Small icon-only button for list rows: a soft highlight (and optional tint) on
+/// hover, a tooltip, and a spoken label for VoiceOver.
+struct IconButton: View {
+    let symbol: String
+    let label: String
+    let tooltip: String
+    var hoverTint: Color = .primary
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .frame(width: 24, height: 22)
+                .foregroundStyle(hovering ? hoverTint : Color.secondary)
+                .background(
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Color.primary.opacity(hovering ? 0.1 : 0)))
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovering)
+        .help(Text(verbatim: tooltip))
+        .accessibilityLabel(Text(verbatim: label))
     }
 }
 
