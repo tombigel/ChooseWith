@@ -33,3 +33,27 @@ confirm each change of default app.
 ./owp --list md             # apps that can open .md
 ./owp --restore md=com.microsoft.VSCode
 ```
+
+## Signing and releases
+
+`build.sh` signs with your **Developer ID Application** certificate if it's in the
+keychain (or set `SIGN_ID`), with the hardened runtime. Without one it signs ad hoc,
+which only runs on the Mac that built it.
+
+To notarize and package a zip others can download, store notary credentials once:
+
+```bash
+xcrun notarytool store-credentials OpenWithPopup --apple-id you@example.com --team-id TEAMID
+```
+
+then:
+
+```bash
+NOTARIZE=1 ./build.sh
+```
+
+which writes `dist/OpenWithPopup.zip`.
+
+## Icon
+
+`swift tools/make_icon.swift` redraws `Resources/AppIcon.icns`.
