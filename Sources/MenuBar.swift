@@ -24,19 +24,12 @@ enum Prefs {
         set { setFlag("showSplash", newValue) }
     }
 
-    /// What to do when another app becomes the default for a managed extension.
-    enum TakeoverPolicy: String, CaseIterable {
-        case keep, ask, nothing
-    }
-
-    /// Ask by default: on macOS 27 a takeover needs the user's OK, so it may be
-    /// intentional; asking neither fights it silently nor ignores it.
-    static var takeoverPolicy: TakeoverPolicy {
-        get { TakeoverPolicy(rawValue: UserDefaults.standard.string(forKey: "takeoverPolicy") ?? "") ?? .ask }
-        set {
-            UserDefaults.standard.set(newValue.rawValue, forKey: "takeoverPolicy")
-            NotificationCenter.default.post(name: .owpPrefsChanged, object: nil)
-        }
+    /// Switch extensions back automatically when another app claims them. Off by
+    /// default, so a default the user changes on purpose (Get Info) isn't undone;
+    /// takeovers are always flagged in the menu bar and Settings either way.
+    static var takeBackExtensions: Bool {
+        get { UserDefaults.standard.object(forKey: "takeBackExtensions") as? Bool ?? false }
+        set { setFlag("takeBackExtensions", newValue) }
     }
 
     /// Help window after the splash when the app is opened directly. On by default.
@@ -101,8 +94,13 @@ enum MenuSummary {
         return names.joined(separator: ", ") + (rest > 0 ? " +\(rest) more" : "")
     }
 
-    static func warning(inactive: Int) -> String {
-        inactive == 1 ? "1 needs re-enabling…" : "\(inactive) need re-enabling…"
+    /// ".svg now opens in Inkscape", or "3 extensions now open in other apps".
+    static func takenText(_ taken: [String]) -> String {
+        if taken.count == 1, let ext = taken.first {
+            let app = Registry.currentHandler(forExtension: ext).map(Registry.appName) ?? "another app"
+            return "." + ext + " now opens in " + app
+        }
+        return "\(taken.count) extensions now open in other apps"
     }
 }
 
@@ -119,7 +117,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
     @objc func update() {
         if Prefs.showMenuBarIcon, item == nil {
-            let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+            let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
             let image = NSImage(systemSymbolName: "contextualmenu.and.cursorarrow", accessibilityDescription: "Choose With")
                 ?? NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: "Choose With")
             image?.isTemplate = true
@@ -132,6 +130,31 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         } else if !Prefs.showMenuBarIcon, let item {
             NSStatusBar.system.removeStatusItem(item)
             self.item = nil
+        }
+        updateWarningBadge()
+    }
+
+    /// When another app has taken any extension: an orange icon with the count
+    /// beside it, and a tooltip saying which. Back to normal once none are taken.
+    private func updateWarningBadge() {
+        guard let button = item?.button else { return }
+        let taken = TakeoverGuard.takenExtensions()
+        if taken.isEmpty {
+            button.contentTintColor = nil
+            button.attributedTitle = NSAttributedString(string: "")
+            button.imagePosition = .imageOnly
+            button.toolTip = "Choose With"
+            button.setAccessibilityLabel("Choose With")
+        } else {
+            button.contentTintColor = .systemOrange
+            button.imagePosition = .imageLeading
+            button.attributedTitle = NSAttributedString(
+                string: "\(taken.count)",
+                attributes: [.foregroundColor: NSColor.systemOrange,
+                             .font: NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .semibold)])
+            let text = MenuSummary.takenText(taken)
+            button.toolTip = "Choose With: " + text
+            button.setAccessibilityLabel("Choose With, warning: " + text)
         }
     }
 
@@ -156,11 +179,19 @@ final class MenuBarController: NSObject, NSMenuDelegate {
             info.submenu = extensionsSubmenu(tracked)
         }
         menu.addItem(info)
+        // Recent automatic take-back, so it's visible even without notifications.
+        if let last = Registry.lastTakeBack(), Date().timeIntervalSince(last.at) < 24 * 60 * 60 {
+            let info = NSMenuItem(title: "Took back ." + last.ext + " from " + last.app + " · " + Notifier.when(last.at),
+                                  action: nil, keyEquivalent: "")
+            info.isEnabled = false
+            menu.addItem(info)
+        }
         if inactive > 0 {
-            let warn = makeItem(MenuSummary.warning(inactive: inactive), #selector(openSettings))
-            warn.image = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: "Warning")
+            let warn = makeItem(MenuSummary.takenText(TakeoverGuard.takenExtensions()) + "…", #selector(openSettings))
+            warn.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: "Warning")
             if #available(macOS 27.0, *) { warn.preferredImageVisibility = .visible }
             menu.addItem(warn)
+            menu.addItem(makeItem(inactive == 1 ? "Take It Back" : "Take Back All", #selector(takeBackAll)))
         }
 
         menu.addItem(.separator())
@@ -206,6 +237,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     @objc private func openSettings() { showSettings() }
+
+    @objc private func takeBackAll() { TakeoverGuard.shared.takeBackAll() }
 
     @objc private func openExtension(_ sender: NSMenuItem) {
         guard let ext = sender.representedObject as? String else { return }

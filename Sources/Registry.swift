@@ -115,7 +115,7 @@ enum Registry {
         if let err = validationError(raw) { return err }
         let ext = normalize(raw)
         // Remember the app to hand the extension back to on removal. If it's already
-        // managed (Re-enable after a takeover), keep the original: the current
+        // managed (Take Back after a takeover), keep the original: the current
         // handler is just the app that grabbed it.
         let alreadyManaged = tracked.contains(ext) && previousHandler(forExtension: ext) != nil
         if !alreadyManaged, let prev = currentHandler(forExtension: ext),
@@ -133,6 +133,19 @@ enum Registry {
     /// Shown in Settings: "Taken back from Inkscape".
     static func setTakenBackNote(_ ext: String, from app: String) {
         defaults.set(app, forKey: "takenBackFrom." + normalize(ext))
+        defaults.set(Date(), forKey: "takenBackAt." + normalize(ext))
+    }
+
+    static func takenBackAt(_ ext: String) -> Date? {
+        defaults.object(forKey: "takenBackAt." + normalize(ext)) as? Date
+    }
+
+    /// Most recent take-back across all extensions, for the menu bar menu.
+    static func lastTakeBack() -> (ext: String, app: String, at: Date)? {
+        tracked.compactMap { ext -> (String, String, Date)? in
+            guard let app = takenBackFrom(ext), let at = takenBackAt(ext) else { return nil }
+            return (ext, app, at)
+        }.max { $0.2 < $1.2 }
     }
 
     static func takenBackFrom(_ ext: String) -> String? {
@@ -160,7 +173,7 @@ enum Registry {
     }
 
     private static func clearNotes(_ ext: String) {
-        for key in ["takenBackFrom.", "gaveUpTo.", "leftTo."] {
+        for key in ["takenBackFrom.", "takenBackAt.", "gaveUpTo.", "leftTo."] {
             defaults.removeObject(forKey: key + normalize(ext))
         }
     }

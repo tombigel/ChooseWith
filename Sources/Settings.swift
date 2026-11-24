@@ -26,7 +26,7 @@ final class SettingsModel: ObservableObject {
             self?.showMenuBarIcon = Prefs.showMenuBarIcon
             self?.showSplash = Prefs.showSplash
             self?.showHelpOnLaunch = Prefs.showHelpOnLaunch
-            self?.takeoverPolicy = Prefs.takeoverPolicy
+            self?.takeBack = Prefs.takeBackExtensions
             self?.reload()
         }
         NotificationCenter.default.addObserver(forName: .owpCustomizeExtension, object: nil, queue: .main) { [weak self] note in
@@ -39,7 +39,7 @@ final class SettingsModel: ObservableObject {
     }
 
     @Published var showMenuBarIcon = Prefs.showMenuBarIcon
-    @Published var takeoverPolicy = Prefs.takeoverPolicy
+    @Published var takeBack = Prefs.takeBackExtensions
     /// Set when the menu bar asks for one extension's Customize sheet.
     @Published var customizeRequest: String?
     @Published var showSplash = Prefs.showSplash
@@ -68,10 +68,9 @@ final class SettingsModel: ObservableObject {
             var note: String? = nil
             if let taker = Registry.gaveUpTo(ext) {
                 note = taker + " keeps taking it"
-            } else if let app = Registry.leftTo(ext) {
-                note = "Left to " + app
             } else if let from = Registry.takenBackFrom(ext) {
                 note = "Taken back from " + from
+                if let at = Registry.takenBackAt(ext) { note! += " · " + Notifier.when(at) }
             }
             return Row(ext: ext, active: Registry.isActive(ext), handlerName: handler.map(Registry.appName),
                        appSummary: summary, note: note)
@@ -93,7 +92,7 @@ final class SettingsModel: ObservableObject {
 
     func reenable(_ ext: String) {
         let err = Registry.register(ext)
-        finish(err.map { [$0] } ?? [], success: "Re-enabled .\(ext)")
+        finish(err.map { [$0] } ?? [], success: "Took back .\(ext)")
     }
 
     private func finish(_ errors: [String], success: String) {
@@ -110,6 +109,32 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            let taken = model.rows.filter { !$0.active }
+            if !taken.isEmpty {
+                HStack(spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.title3)
+                        .foregroundStyle(.orange)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(verbatim: MenuSummary.takenText(taken.map(\.ext))).bold()
+                        Text(taken.count == 1
+                             ? "Files with this extension open directly, without the Choose With menu."
+                             : "Files with these extensions open directly, without the Choose With menu.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button(taken.count == 1 ? "Take It Back" : "Take Back All") {
+                        TakeoverGuard.shared.takeBackAll()
+                        model.reload()
+                    }
+                }
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.orange.opacity(0.15)))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.orange.opacity(0.5)))
+                .accessibilityElement(children: .combine)
+            }
+
             Text("Files with these extensions let you choose which app opens them, every time.")
                 .foregroundStyle(.secondary)
 
@@ -129,7 +154,7 @@ struct SettingsView: View {
                                 icon: { Image(systemName: "exclamationmark.triangle.fill") }
                                 .foregroundStyle(.orange)
                                 .help("Another app became the default for this extension.")
-                            Button("Re-enable") { model.reenable(row.ext) }
+                            Button("Take Back") { model.reenable(row.ext) }
                                 .controlSize(.small)
                         }
                         if let note = row.note {
@@ -154,6 +179,7 @@ struct SettingsView: View {
                         }
                     }
                     .padding(.vertical, 2)
+                    .listRowBackground(row.active ? nil : Color.orange.opacity(0.15))
                 }
             }
             .listStyle(.bordered(alternatesRowBackgrounds: true))
@@ -182,20 +208,20 @@ struct SettingsView: View {
             Toggle("Start at login, so the menu appears instantly", isOn: Binding(
                 get: { model.launchAtLogin },
                 set: { model.setLaunchAtLogin($0) }))
-            HStack(alignment: .firstTextBaseline) {
-                Text("If another app claims an extension:")
-                Picker("If another app claims an extension", selection: Binding(
-                    get: { model.takeoverPolicy },
-                    set: { Prefs.takeoverPolicy = $0; TakeoverGuard.shared.check() })) {
-                    Text("Keep Choose With").tag(Prefs.TakeoverPolicy.keep)
-                    Text("Ask me").tag(Prefs.TakeoverPolicy.ask)
-                    Text("Do nothing").tag(Prefs.TakeoverPolicy.nothing)
-                }
-                .pickerStyle(.radioGroup)
-                .horizontalRadioGroupLayout()
-                .labelsHidden()
+            VStack(alignment: .leading, spacing: 2) {
+                Toggle("Take extensions back if another app claims them", isOn: Binding(
+                    get: { model.takeBack },
+                    set: { on in
+                        Prefs.takeBackExtensions = on
+                        // Ask for notification permission here, when it's clearly needed.
+                        if on { Notifier.requestPermission() }
+                        TakeoverGuard.shared.check()
+                    }))
+                Text("Apps can make themselves the default for a file type. When this is off, Choose With warns you in the menu bar and here instead.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, 20)
             }
-            .help("Apps you install can ask to become the default for a file type. Keep switches it back automatically; Ask lets you decide each time.")
             Toggle("Show icon in menu bar", isOn: Binding(
                 get: { model.showMenuBarIcon },
                 set: { model.setShowMenuBarIcon($0) }))
