@@ -21,7 +21,29 @@ enum Registry {
 
     static func utType(forExtension ext: String) -> UTType? {
         let e = normalize(ext)
-        return e.isEmpty ? nil : UTType(filenameExtension: e)
+        return validationError(e) == nil ? UTType(filenameExtension: e) : nil
+    }
+
+    private static let allowedChars = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyz0123456789-_+")
+
+    /// Types that must never be taken over: opening apps, folders, disks or links
+    /// would break (or hijack) basic Finder behavior.
+    private static let blockedTypes: [UTType] = [
+        .application, .applicationBundle, .executable, .folder, .directory, .volume,
+        .aliasFile, .symbolicLink, .resolvable,
+    ]
+
+    /// Why an extension can't be used, or nil if it's fine.
+    static func validationError(_ raw: String) -> String? {
+        let ext = normalize(raw)
+        guard !ext.isEmpty, ext.count <= 32,
+              ext.unicodeScalars.allSatisfy(allowedChars.contains) else {
+            return "“\(raw)” isn’t a valid extension (up to 32 letters, digits, - _ +)"
+        }
+        if let type = UTType(filenameExtension: ext), blockedTypes.contains(where: type.conforms(to:)) {
+            return ".\(ext) opens apps, folders or links, so it can’t be used"
+        }
+        return nil
     }
 
     /// Extensions managed by this app (added in Settings or with --register).
@@ -58,8 +80,16 @@ enum Registry {
     /// Sets the default app for an extension. Returns an error message, or nil on success.
     /// Uses NSWorkspace, which macOS honors (the older LSSetDefaultRoleHandler call is
     /// silently ignored on current macOS). macOS may ask the user to confirm.
+    private static var changing = false
+
     static func setDefault(bundleID: String, forExtension ext: String) -> String? {
+        if let err = validationError(ext) { return err }
         guard let type = utType(forExtension: ext) else { return ".\(ext): not a valid extension" }
+        // The wait below keeps the run loop going, so guard against a second
+        // change starting (e.g. a double click) before macOS has answered.
+        guard !changing else { return ".\(ext): another change is still in progress" }
+        changing = true
+        defer { changing = false }
         let appURL = bundleID.caseInsensitiveCompare(selfBundleID) == .orderedSame
             ? Bundle.main.bundleURL
             : NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
@@ -82,6 +112,7 @@ enum Registry {
 
     /// Makes the popup the default for an extension and remembers the old default.
     static func register(_ raw: String) -> String? {
+        if let err = validationError(raw) { return err }
         let ext = normalize(raw)
         if let prev = currentHandler(forExtension: ext),
            prev.caseInsensitiveCompare(selfBundleID) != .orderedSame {

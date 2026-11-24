@@ -2,8 +2,7 @@
 
 **Don't just open with. Choose with.**
 
-The name is a word game on the Finder's **Open With** menu: instead of a file
-opening with one fixed app, you choose what it opens with, every time.
+The name is a twist on the Finder's **Open With**.
 
 A tiny macOS app that turns "Open With" into a popup. Make it the default app for
 any file extensions you choose; opening one of those files (double-click, Return,
@@ -75,3 +74,9 @@ which writes `dist/ChooseWith.zip`.
 ## Icon
 
 `swift tools/make_icon.swift` redraws `Resources/AppIcon.icns`.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
+Found a bug? [Open an issue](https://github.com/tombigel/ChooseWith/issues/new).

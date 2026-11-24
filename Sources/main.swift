@@ -124,6 +124,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     @objc func showAbout() { Credits.showAboutPanel() }
+    @objc func openRepo() { Credits.openRepo() }
+    @objc func reportBug() { Credits.reportBug() }
 
     @objc func showHelp() {
         if help == nil {
@@ -176,6 +178,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let helpItem = NSMenuItem()
         let helpMenu = NSMenu(title: "Help")
         helpMenu.addItem(withTitle: "Choose With Help", action: #selector(showHelp), keyEquivalent: "?").target = self
+        helpMenu.addItem(.separator())
+        helpMenu.addItem(withTitle: "Choose With on GitHub", action: #selector(openRepo), keyEquivalent: "").target = self
+        helpMenu.addItem(withTitle: "Report a Bug…", action: #selector(reportBug), keyEquivalent: "").target = self
         helpItem.submenu = helpMenu
         main.addItem(helpItem)
         NSApp.helpMenu = helpMenu
@@ -210,13 +215,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
                 result = apps
             }
         }
-        var seen = Set<String>()
-        return (result ?? []).filter { app in
-            let id = Bundle(url: app)?.bundleIdentifier ?? app.path
-            guard id != selfBundleID, !seen.contains(id) else { return false }
-            seen.insert(id)
-            return true
-        }
+        return AppLists.unique(result ?? [])
     }
 
     private func lastUsedKey(for urls: [URL]) -> String {
@@ -228,10 +227,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         pending.removeAll()
         guard !urls.isEmpty else { return }
 
+        let ext = urls[0].pathExtension
         var apps = candidateApps(for: urls)
-        // Put the last app chosen for this extension first.
-        if let last = UserDefaults.standard.string(forKey: lastUsedKey(for: urls)),
-           let idx = apps.firstIndex(where: { $0.path == last }) {
+        var hiddenApps: [URL] = []
+        if AppLists.isCustomized(ext) {
+            // The user's own order and hidden apps for this extension.
+            (apps, hiddenApps) = AppLists.arrange(apps, ext: ext)
+        } else if let last = UserDefaults.standard.string(forKey: lastUsedKey(for: urls)),
+                  let idx = apps.firstIndex(where: { $0.path == last }) {
+            // Otherwise the last app chosen for this extension goes first.
             apps.insert(apps.remove(at: idx), at: 0)
         }
 
@@ -239,25 +243,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.autoenablesItems = false
         menu.delegate = self
 
-        let title = urls.count == 1 ? urls[0].lastPathComponent : "\(urls.count) files"
+        let title = urls.count == 1 ? menuSafe(urls[0].lastPathComponent) : "\(urls.count) files"
         let header = NSMenuItem(title: "Open “\(title)” with", action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
         menu.addItem(.separator())
 
         for (i, app) in apps.enumerated() {
-            let name = FileManager.default.displayName(atPath: app.path).replacingOccurrences(of: ".app", with: "")
-            let key = i < 9 ? String(i + 1) : ""
-            let item = NSMenuItem(title: name, action: #selector(openWith(_:)), keyEquivalent: key)
-            item.keyEquivalentModifierMask = []
-            item.target = self
-            item.representedObject = (app, urls)
-            let icon = NSWorkspace.shared.icon(forFile: app.path)
-            icon.size = NSSize(width: 16, height: 16)
-            item.image = icon
-            menu.addItem(item)
+            menu.addItem(appItem(app, urls: urls, key: i < 9 ? String(i + 1) : ""))
         }
-        if apps.isEmpty {
+        if !hiddenApps.isEmpty {
+            let more = NSMenuItem(title: "More Apps", action: nil, keyEquivalent: "")
+            let sub = NSMenu()
+            sub.autoenablesItems = false
+            hiddenApps.forEach { sub.addItem(appItem($0, urls: urls, key: "")) }
+            more.submenu = sub
+            menu.addItem(more)
+        }
+        if apps.isEmpty && hiddenApps.isEmpty {
             let none = NSMenuItem(title: "No apps found", action: nil, keyEquivalent: "")
             none.isEnabled = false
             menu.addItem(none)
@@ -282,6 +285,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
         // popUp blocks until the menu closes; actions have already run by now.
         menuOpen = false
+    }
+
+    /// File names can be very long or contain line breaks and control characters;
+    /// keep the menu header to one tidy line.
+    private func menuSafe(_ name: String) -> String {
+        let oneLine = String(name.unicodeScalars.map { CharacterSet.controlCharacters.contains($0) ? " " : Character($0) })
+        guard oneLine.count > 60 else { return oneLine }
+        return oneLine.prefix(40) + "…" + oneLine.suffix(17)
+    }
+
+    private func appItem(_ app: URL, urls: [URL], key: String) -> NSMenuItem {
+        let item = NSMenuItem(title: AppLists.name(app), action: #selector(openWith(_:)), keyEquivalent: key)
+        item.keyEquivalentModifierMask = []
+        item.target = self
+        item.representedObject = (app, urls)
+        item.image = AppLists.icon(app)
+        item.toolTip = app.path
+        return item
     }
 
     @objc private func openWith(_ sender: NSMenuItem) {

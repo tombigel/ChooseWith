@@ -7,6 +7,11 @@ enum Credits {
     static let author = "Tom Bigelajzen"
     static let websiteName = "tombigel.com"
     static let website = URL(string: "https://tombigel.com")!
+    static let repo = URL(string: "https://github.com/tombigel/ChooseWith")!
+    static let bugReport = URL(string: "https://github.com/tombigel/ChooseWith/issues/new")!
+
+    static func openRepo() { NSWorkspace.shared.open(repo) }
+    static func reportBug() { NSWorkspace.shared.open(bugReport) }
     static var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
     }
@@ -28,11 +33,17 @@ enum Credits {
         let para = NSMutableParagraphStyle()
         para.alignment = .center
         let text = NSMutableAttributedString(
-            string: "A word game on “Open With”: you choose what every file opens with.\n\nMade by \(author)\n",
+            string: "A twist on the Finder’s “Open With”.\n\nMade by \(author)\n",
             attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor, .paragraphStyle: para])
         text.append(NSAttributedString(
             string: websiteName,
             attributes: [.font: font, .link: website, .paragraphStyle: para]))
+        text.append(NSAttributedString(
+            string: " · ",
+            attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor, .paragraphStyle: para]))
+        text.append(NSAttributedString(
+            string: "GitHub",
+            attributes: [.font: font, .link: repo, .paragraphStyle: para]))
         return text
     }
 }
@@ -68,16 +79,16 @@ struct HelpView: View {
             section("Tips") {
                 tip("keyboard", "Press **1–9** to pick an app, or **Esc** to cancel.")
                 tip("arrow.up.to.line", "The app you chose last for each extension is listed first.")
+                tip("slider.horizontal.3", "Too many apps? Use **Customize…** in Settings to reorder them and hide the ones you don’t need.")
                 tip("doc.on.doc", "Select several files to open them together. Only apps that can open all of them are listed.")
                 tip("ellipsis.circle", "**Other…** picks any app. **Show in Finder** reveals the files.")
                 tip("arrow.uturn.backward", "Removing an extension gives it back to the app that opened it before.")
                 tip("menubar.rectangle", "Choose With runs in the background. Turn on **Start at login** so the menu is always instant.")
             }
 
-            section("About the name") {
-                Text("It’s a word game on the Finder’s **Open With** menu. Normally a file just opens with its default app. Here, every time, you **choose with** what it opens.")
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+
+            Text("The name is a twist on the Finder’s **Open With**.")
+                .font(.callout).foregroundStyle(.secondary)
 
             Toggle("Don’t show this when opening Choose With", isOn: Binding(
                 get: { dontShowAgain },
@@ -91,7 +102,13 @@ struct HelpView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Made by \(Credits.author) · Version \(Credits.version)")
                         .foregroundStyle(.secondary)
-                    Link(Credits.websiteName, destination: Credits.website)
+                    HStack(spacing: 4) {
+                        Link(Credits.websiteName, destination: Credits.website)
+                        Text("·").foregroundStyle(.secondary)
+                        Link("GitHub", destination: Credits.repo)
+                        Text("·").foregroundStyle(.secondary)
+                        Link("Report a bug", destination: Credits.bugReport)
+                    }
                 }
                 .font(.caption)
                 Spacer()

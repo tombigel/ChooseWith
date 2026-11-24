@@ -120,6 +120,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(makeItem("Settings…", #selector(openSettings), key: ","))
         menu.addItem(makeItem("How It Works…", #selector(openHelp)))
         menu.addItem(makeItem("About Choose With", #selector(openAbout)))
+        menu.addItem(makeItem("Choose With on GitHub", #selector(openRepo)))
+        menu.addItem(makeItem("Report a Bug…", #selector(reportBug)))
         let login = makeItem("Start at Login", #selector(toggleLogin))
         login.state = LoginItem.isEnabled ? .on : .off
         menu.addItem(login)
@@ -137,6 +139,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     @objc private func openSettings() { showSettings() }
 
     @objc private func openAbout() { Credits.showAboutPanel() }
+    @objc private func openRepo() { Credits.openRepo() }
+    @objc private func reportBug() { Credits.reportBug() }
 
     @objc private func openHelp() { NotificationCenter.default.post(name: .owpShowHelp, object: nil) }
 

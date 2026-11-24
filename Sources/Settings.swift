@@ -8,6 +8,7 @@ final class SettingsModel: ObservableObject {
         let ext: String
         let active: Bool
         let handlerName: String?
+        let appSummary: String?    // "8 of 23 apps" when customized
         var id: String { ext }
     }
 
@@ -24,6 +25,10 @@ final class SettingsModel: ObservableObject {
             self?.showMenuBarIcon = Prefs.showMenuBarIcon
             self?.showSplash = Prefs.showSplash
             self?.showHelpOnLaunch = Prefs.showHelpOnLaunch
+        }
+        // Apps may have been installed or removed, or defaults changed, while away.
+        NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.reload()
         }
     }
 
@@ -46,7 +51,13 @@ final class SettingsModel: ObservableObject {
         showMenuBarIcon = Prefs.showMenuBarIcon
         rows = Registry.tracked.map { ext in
             let handler = Registry.currentHandler(forExtension: ext)
-            return Row(ext: ext, active: Registry.isActive(ext), handlerName: handler.map(Registry.appName))
+            var summary: String? = nil
+            if AppLists.isCustomized(ext) {
+                let (shown, hidden) = AppLists.arrange(AppLists.apps(forExtension: ext), ext: ext)
+                summary = "\(shown.count) of \(shown.count + hidden.count) apps"
+            }
+            return Row(ext: ext, active: Registry.isActive(ext), handlerName: handler.map(Registry.appName),
+                       appSummary: summary)
         }
     }
 
@@ -78,6 +89,7 @@ final class SettingsModel: ObservableObject {
 
 struct SettingsView: View {
     @ObservedObject var model: SettingsModel
+    @State private var customizing: CustomizeTarget?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -91,33 +103,46 @@ struct SettingsView: View {
                 }
                 ForEach(model.rows) { row in
                     HStack(spacing: 10) {
-                        Text(".\(row.ext)")
+                        Text(verbatim: "." + row.ext)
                             .font(.system(.body, design: .monospaced))
                             .frame(minWidth: 70, alignment: .leading)
                         if row.active {
                             Label("Active", systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                         } else {
-                            Label("Opens in \(row.handlerName ?? "no app")", systemImage: "exclamationmark.triangle.fill")
+                            Label { Text(verbatim: "Opens in " + (row.handlerName ?? "no app")) }
+                                icon: { Image(systemName: "exclamationmark.triangle.fill") }
                                 .foregroundStyle(.orange)
                                 .help("Another app became the default for this extension.")
                             Button("Re-enable") { model.reenable(row.ext) }
                                 .controlSize(.small)
                         }
                         Spacer()
+                        if let summary = row.appSummary {
+                            Text(summary).font(.caption).foregroundStyle(.secondary)
+                        }
+                        Button("Customize…") { customizing = CustomizeTarget(ext: row.ext) }
+                            .controlSize(.small)
+                            .help(Text(verbatim: "Reorder and hide apps in the menu for ." + row.ext))
                         Button {
                             model.remove(row.ext)
                         } label: {
                             Image(systemName: "minus.circle")
                         }
                         .buttonStyle(.borderless)
-                        .help("Remove .\(row.ext) and give it back to its previous app")
+                        .help(Text(verbatim: "Remove ." + row.ext + " and give it back to its previous app"))
                     }
                     .padding(.vertical, 2)
                 }
             }
             .listStyle(.bordered(alternatesRowBackgrounds: true))
             .frame(minHeight: 180)
+            .sheet(item: $customizing) { target in
+                CustomizeView(model: CustomizeModel(ext: target.ext)) {
+                    customizing = nil
+                    model.reload()
+                }
+            }
 
             HStack {
                 TextField("Add extensions, e.g. md, txt, json", text: $model.input)
@@ -163,7 +188,7 @@ struct SettingsView: View {
             }
         }
         .padding(16)
-        .frame(minWidth: 440, minHeight: 460)
+        .frame(minWidth: 520, minHeight: 460)
     }
 }
 
@@ -172,13 +197,19 @@ final class SettingsWindowController: NSWindowController {
 
     convenience init() {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 400),
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: 520),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
             backing: .buffered, defer: false)
         window.title = "Choose With Settings"
         window.isReleasedWhenClosed = false
         window.center()
         window.setFrameAutosaveName("SettingsWindow")
+        // Room for the Customize buttons, even if a smaller size was saved earlier.
+        window.contentMinSize = NSSize(width: 540, height: 500)
+        if window.frame.width < 560 || window.frame.height < 520 {
+            window.setContentSize(NSSize(width: 560, height: 520))
+            window.center()
+        }
         self.init(window: window)
         window.contentView = NSHostingView(rootView: SettingsView(model: model))
     }
