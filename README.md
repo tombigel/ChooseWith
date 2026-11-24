@@ -24,6 +24,10 @@ running, or the last item in any popup) to add and remove extensions. Removing a
 extension gives it back to the app that opened it before. macOS may ask you to
 confirm each change of default app.
 
+After first use the app keeps running in the background (no Dock icon), so the menu
+appears instantly. Turn on **Start at login** in Settings to keep it ready after a
+restart; quit it with ⌘Q while the Settings window is open.
+
 ## Command line
 
 ```bash

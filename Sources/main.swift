@@ -68,13 +68,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var flushScheduled = false
     private var menuOpen = false
     private var receivedFiles = false
-    private var quitTimer: Timer?
     private var settings: SettingsWindowController?
 
-    private var settingsVisible: Bool { settings?.window?.isVisible == true }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = makeMainMenu()
+        // Started at login: stay quietly in the background so the popup is instant.
+        let launchEvent = NSAppleEventManager.shared().currentAppleEvent
+        if launchEvent?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem {
+            return
+        }
         // Launched by opening files, the open event usually arrives first; give it a
         // moment anyway. Launched directly (no files): show Settings.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
@@ -89,7 +92,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     }
 
     @objc func showSettings() {
-        quitTimer?.invalidate()
         if settings == nil {
             settings = SettingsWindowController()
             settings?.window?.delegate = self
@@ -101,7 +103,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     func windowWillClose(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        scheduleQuit(after: 0.3)
     }
 
     private func makeMainMenu() -> NSMenu {
@@ -137,24 +138,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
     func application(_ application: NSApplication, open urls: [URL]) {
         receivedFiles = true
-        quitTimer?.invalidate()
         pending.append(contentsOf: urls)
-        // Finder can deliver a multi-file selection in several events; batch them.
+        // Finder sends a multi-file selection as one event; waiting a single run-loop
+        // turn still merges any back-to-back events without a visible delay.
         guard !flushScheduled else { return }
         flushScheduled = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+        DispatchQueue.main.async { [weak self] in
             self?.flushScheduled = false
             self?.showMenu()
         }
     }
 
-    private func scheduleQuit(after seconds: TimeInterval) {
-        quitTimer?.invalidate()
-        quitTimer = Timer.scheduledTimer(withTimeInterval: seconds, repeats: false) { [weak self] _ in
-            guard let self, !self.menuOpen, self.pending.isEmpty, !self.settingsVisible else { return }
-            NSApp.terminate(nil)
-        }
-    }
+    // The app stays running in the background (no Dock icon) after first use, so later
+    // opens skip app startup and the menu appears immediately.
 
     private func candidateApps(for urls: [URL]) -> [URL] {
         // Apps that can open every file in the selection, in LaunchServices order.
@@ -184,7 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private func showMenu() {
         let urls = pending
         pending.removeAll()
-        guard !urls.isEmpty else { scheduleQuit(after: 0.5); return }
+        guard !urls.isEmpty else { return }
 
         var apps = candidateApps(for: urls)
         // Put the last app chosen for this extension first.
@@ -240,7 +236,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
         // popUp blocks until the menu closes; actions have already run by now.
         menuOpen = false
-        scheduleQuit(after: 0.3)
     }
 
     @objc private func openWith(_ sender: NSMenuItem) {
@@ -277,7 +272,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             DispatchQueue.main.async {
                 if let error { NSAlert(error: error).runModal() }
                 self?.menuOpen = false
-                self?.scheduleQuit(after: 0.3)
             }
         }
     }

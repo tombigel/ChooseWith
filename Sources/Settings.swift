@@ -2,6 +2,7 @@
 
 import AppKit
 import SwiftUI
+import ServiceManagement
 
 final class SettingsModel: ObservableObject {
     struct Row: Identifiable {
@@ -14,10 +15,26 @@ final class SettingsModel: ObservableObject {
     @Published var rows: [Row] = []
     @Published var input = ""
     @Published var message: String?
+    @Published var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     init() { reload() }
 
+    func setLaunchAtLogin(_ on: Bool) {
+        do {
+            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+            message = on ? "Open With Popup will start at login." : "Open With Popup won't start at login."
+        } catch {
+            message = "Couldn't change Start at login: \(error.localizedDescription)"
+        }
+        launchAtLogin = SMAppService.mainApp.status == .enabled
+        if SMAppService.mainApp.status == .requiresApproval {
+            message = "Allow Open With Popup in System Settings → General → Login Items."
+            SMAppService.openSystemSettingsLoginItems()
+        }
+    }
+
     func reload() {
+        launchAtLogin = SMAppService.mainApp.status == .enabled
         rows = Registry.tracked.map { ext in
             let handler = Registry.currentHandler(forExtension: ext)
             return Row(ext: ext, active: Registry.isActive(ext), handlerName: handler.map(Registry.appName))
@@ -102,6 +119,12 @@ struct SettingsView: View {
                     .disabled(Registry.parse(model.input).isEmpty)
             }
 
+            Toggle("Start at login, so the menu appears instantly", isOn: Binding(
+                get: { model.launchAtLogin },
+                set: { model.setLaunchAtLogin($0) }))
+            Text("Open With Popup keeps running in the background without a Dock icon. Quit it with ⌘Q in this window.")
+                .font(.caption).foregroundStyle(.secondary)
+
             HStack(alignment: .top) {
                 if let message = model.message {
                     Text(message).font(.callout).foregroundStyle(.secondary)
@@ -113,7 +136,7 @@ struct SettingsView: View {
             }
         }
         .padding(16)
-        .frame(minWidth: 440, minHeight: 340)
+        .frame(minWidth: 440, minHeight: 400)
     }
 }
 

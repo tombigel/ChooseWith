@@ -49,6 +49,8 @@ if [[ "${NOTARIZE:-0}" == 1 ]]; then
   echo "Release: dist/OpenWithPopup.zip"
 fi
 
+# The app stays running in the background; quit the old copy before replacing it.
+pkill -x OpenWithPopup || true
 mkdir -p "$HOME/Applications"
 rm -rf "$DEST"
 cp -R "$APP" "$DEST"
