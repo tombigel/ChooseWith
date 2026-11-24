@@ -26,7 +26,11 @@ confirm each change of default app.
 
 After first use the app keeps running in the background (no Dock icon), so the menu
 appears instantly. Turn on **Start at login** in Settings to keep it ready after a
-restart; quit it with ⌘Q while the Settings window is open.
+restart.
+
+A **menu bar icon** shows which extensions are active and has Settings, Start at
+Login, Hide Menu Bar Icon and Quit. Hide or show it from the menu or in Settings;
+when it's hidden, open the app again to get back to Settings.
 
 ## Command line
 

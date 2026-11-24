@@ -69,10 +69,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
     private var menuOpen = false
     private var receivedFiles = false
     private var settings: SettingsWindowController?
+    private var menuBar: MenuBarController?
 
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = makeMainMenu()
+        menuBar = MenuBarController { [weak self] in self?.showSettings() }
         // Started at login: stay quietly in the background so the popup is instant.
         let launchEvent = NSAppleEventManager.shared().currentAppleEvent
         if launchEvent?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem {
