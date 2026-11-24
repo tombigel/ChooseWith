@@ -76,6 +76,21 @@ final class CustomizeModel: ObservableObject {
         }
     }
 
+    enum Move { case top, up, down, bottom }
+
+    func move(_ id: String, _ where: Move) {
+        guard let i = items.firstIndex(where: { $0.id == id }) else { return }
+        let target: Int
+        switch `where` {
+        case .top: target = 0
+        case .up: target = max(i - 1, 0)
+        case .down: target = min(i + 1, items.count - 1)
+        case .bottom: target = items.count - 1
+        }
+        guard target != i else { return }
+        items.insert(items.remove(at: i), at: target)
+    }
+
     func setAll(shown: Bool) {
         for i in items.indices { items[i].shown = shown }
     }
@@ -106,54 +121,28 @@ struct CustomizeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(verbatim: "Apps for ." + model.ext).font(.headline)
-            Text("Drag to reorder. Untick apps you don’t need; they move to **More Apps** at the bottom of the menu.")
+            Text("Drag apps to reorder them, or right-click for Move options. Untick apps you don’t need; they move to **More Apps** at the bottom of the menu.")
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             List {
                 ForEach($model.items) { $item in
-                    HStack(spacing: 8) {
-                        Image(systemName: "line.3.horizontal")
-                            .foregroundStyle(.tertiary)
-                            .help("Drag to reorder")
-                        Toggle("", isOn: $item.shown)
-                            .labelsHidden()
-                            .toggleStyle(.checkbox)
-                        Image(nsImage: item.icon)
-                            .resizable().frame(width: 20, height: 20)
-                        Text(item.name)
-                            .foregroundStyle(item.shown ? .primary : .secondary)
-                            .help(item.url.path)
-                        Spacer()
-                        if let key = model.shortcut(for: item) {
-                            Text(key)
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 18, height: 18)
-                                .background(RoundedRectangle(cornerRadius: 4).strokeBorder(.tertiary))
-                                .help("Press \(key) in the menu to pick this app")
-                        }
-                    }
-                    .padding(.vertical, 1)
+                    CustomizeRow(item: $item, shortcut: model.shortcut(for: item), model: model)
                 }
                 .onMove { model.items.move(fromOffsets: $0, toOffset: $1) }
             }
             .listStyle(.bordered(alternatesRowBackgrounds: true))
             .frame(minHeight: 320)
+            .accessibilityLabel(Text(verbatim: "Apps for ." + model.ext))
 
             Text(verbatim: "\(model.shownCount) of \(model.items.count) apps in the menu. Your order replaces “last used first” for .\(model.ext).")
                 .font(.caption).foregroundStyle(.secondary)
 
             HStack {
-                Button {
-                    model.sync()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .help("Refresh the list of installed apps")
                 Button("Show All") { model.setAll(shown: true) }
                 Button("Hide All") { model.setAll(shown: false) }
-                Button("Reset to Default") { model.resetToDefault() }
+                Button("Reset") { model.resetToDefault() }
+                    .help("Back to the default: every app shown, in the system’s order")
                 Spacer()
                 Button("Cancel") { done() }
                     .keyboardShortcut(.cancelAction)
@@ -163,5 +152,62 @@ struct CustomizeView: View {
         }
         .padding(18)
         .frame(width: 460)
+    }
+}
+
+/// One app in the Customize list. Dragging works anywhere on the row; the handle is
+/// a hint that lights up (with a grab cursor) on hover. Moving also works from the
+/// right-click menu and as VoiceOver actions, so it never depends on dragging.
+private struct CustomizeRow: View {
+    @Binding var item: CustomizeModel.Item
+    let shortcut: String?
+    let model: CustomizeModel
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(hovering ? .secondary : .tertiary)
+                .accessibilityHidden(true)
+            // The label is the app name, so VoiceOver reads "Sublime Text, checkbox".
+            Toggle(isOn: $item.shown) { Text(verbatim: item.name) }
+                .labelsHidden()
+                .toggleStyle(.checkbox)
+                .help(item.shown ? "Shown in the menu" : "Under More Apps")
+            Image(nsImage: item.icon)
+                .resizable().frame(width: 20, height: 20)
+                .accessibilityHidden(true)
+            Text(verbatim: item.name)
+                .foregroundStyle(item.shown ? .primary : .secondary)
+                .help(item.url.path)
+                .accessibilityHidden(true)
+            Spacer()
+            if let shortcut {
+                Text(verbatim: shortcut)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 18, height: 18)
+                    .background(RoundedRectangle(cornerRadius: 4).strokeBorder(.tertiary))
+                    .help(Text(verbatim: "Press \(shortcut) in the menu to pick this app"))
+                    .accessibilityLabel(Text(verbatim: "Shortcut \(shortcut)"))
+            }
+        }
+        .padding(.vertical, 1)
+        .contentShape(Rectangle())
+        .onHover { inside in
+            hovering = inside
+            if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
+        }
+        .onDisappear { if hovering { NSCursor.pop(); hovering = false } }
+        .contextMenu {
+            Button("Move to Top") { model.move(item.id, .top) }
+            Button("Move Up") { model.move(item.id, .up) }
+            Button("Move Down") { model.move(item.id, .down) }
+            Button("Move to Bottom") { model.move(item.id, .bottom) }
+        }
+        .accessibilityAction(named: Text("Move Up")) { model.move(item.id, .up) }
+        .accessibilityAction(named: Text("Move Down")) { model.move(item.id, .down) }
+        .accessibilityAction(named: Text("Move to Top")) { model.move(item.id, .top) }
+        .accessibilityAction(named: Text("Move to Bottom")) { model.move(item.id, .bottom) }
     }
 }

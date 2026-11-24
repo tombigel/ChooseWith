@@ -106,10 +106,8 @@ struct SettingsView: View {
                         Text(verbatim: "." + row.ext)
                             .font(.system(.body, design: .monospaced))
                             .frame(minWidth: 70, alignment: .leading)
-                        if row.active {
-                            Label("Active", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                        } else {
+                        // Only worth showing when something's wrong: another app took over.
+                        if !row.active {
                             Label { Text(verbatim: "Opens in " + (row.handlerName ?? "no app")) }
                                 icon: { Image(systemName: "exclamationmark.triangle.fill") }
                                 .foregroundStyle(.orange)
