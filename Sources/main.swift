@@ -282,6 +282,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         NSApp.activate(ignoringOtherApps: true)
         menuOpen = true
+        // Start with the first app highlighted so Return picks it: once the menu is
+        // tracking, a Down Arrow moves the highlight onto the first selectable row
+        // (the header isn't selectable). The timer runs inside menu tracking.
+        if menu.items.contains(where: { $0.action == #selector(openWith(_:)) }) {
+            let highlightFirst = Timer(timeInterval: 0.01, repeats: false) { _ in
+                let down = String(UnicodeScalar(NSDownArrowFunctionKey)!)
+                for type in [NSEvent.EventType.keyDown, .keyUp] {
+                    if let event = NSEvent.keyEvent(
+                        with: type, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                        windowNumber: 0, context: nil, characters: down, charactersIgnoringModifiers: down,
+                        isARepeat: false, keyCode: 125) {
+                        NSApp.postEvent(event, atStart: false)
+                    }
+                }
+            }
+            RunLoop.main.add(highlightFirst, forMode: .common)
+        }
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
         // popUp blocks until the menu closes; actions have already run by now.
         menuOpen = false

@@ -79,15 +79,27 @@ enum AppLists {
 
     static func clearIconCache() { iconCache.removeAll() }
 
-    /// The app's icon drawn into its own 16 pt image (32 px for Retina), so menus
-    /// show it reliably instead of resizing the shared icon.
+    /// The app's icon as a plain bitmap image (1x and 2x pixels). Menus are drawn
+    /// by another process on current macOS, which drops icons that are drawn on
+    /// demand, so the pixels have to be real.
     static func icon(_ app: URL, size: CGFloat = 16) -> NSImage {
         let cacheKey = "\(app.path)@\(size)"
         if let cached = iconCache[cacheKey] { return cached }
         let source = NSWorkspace.shared.icon(forFile: app.path)
-        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
-            source.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
-            return true
+        let image = NSImage(size: NSSize(width: size, height: size))
+        for scale in [1, 2] {
+            let px = Int(size) * scale
+            guard let rep = NSBitmapImageRep(
+                bitmapDataPlanes: nil, pixelsWide: px, pixelsHigh: px, bitsPerSample: 8,
+                samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
+                bytesPerRow: 0, bitsPerPixel: 0) else { continue }
+            rep.size = NSSize(width: size, height: size)
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+            NSGraphicsContext.current?.imageInterpolation = .high
+            source.draw(in: NSRect(x: 0, y: 0, width: size, height: size), from: .zero, operation: .sourceOver, fraction: 1)
+            NSGraphicsContext.restoreGraphicsState()
+            image.addRepresentation(rep)
         }
         iconCache[cacheKey] = image
         return image

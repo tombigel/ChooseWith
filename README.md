@@ -8,7 +8,7 @@ A tiny macOS app that turns "Open With" into a popup. Make it the default app fo
 any file extensions you choose; opening one of those files (double-click, Return,
 `open file.ext`) shows a menu at the mouse pointer with every app that can open it.
 
-- Number keys 1–9 pick the first nine apps
+- Return picks the first app; number keys 1–9 pick the first nine
 - The app you last chose for an extension moves to the top
 - Multi-file selections list only apps that can open all of them
 - "Other…" picks any app; "Show in Finder" reveals the files

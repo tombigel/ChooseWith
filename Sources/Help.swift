@@ -77,7 +77,7 @@ struct HelpView: View {
             }
 
             section("Tips") {
-                tip("keyboard", "Press **1–9** to pick an app, or **Esc** to cancel.")
+                tip("keyboard", "Press **Return** for the first app, **1–9** to pick another, or **Esc** to cancel.")
                 tip("arrow.up.to.line", "The app you chose last for each extension is listed first.")
                 tip("slider.horizontal.3", "Too many apps? Use **Customize…** in Settings to reorder them and hide the ones you don’t need.")
                 tip("doc.on.doc", "Select several files to open them together. Only apps that can open all of them are listed.")
