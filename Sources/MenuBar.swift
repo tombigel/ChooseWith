@@ -4,11 +4,31 @@ import AppKit
 import ServiceManagement
 
 extension Notification.Name {
-    static let owpPrefsChanged = Notification.Name("OpenWithPopupPrefsChanged")
+    static let owpPrefsChanged = Notification.Name("ChooseWithPrefsChanged")
 }
 
 enum Prefs {
     private static let menuBarKey = "showMenuBarIcon"
+
+    private static func flag(_ key: String) -> Bool {
+        UserDefaults.standard.object(forKey: key) as? Bool ?? true
+    }
+    private static func setFlag(_ key: String, _ value: Bool) {
+        UserDefaults.standard.set(value, forKey: key)
+        NotificationCenter.default.post(name: .owpPrefsChanged, object: nil)
+    }
+
+    /// Splash screen when the app is opened directly. On by default.
+    static var showSplash: Bool {
+        get { flag("showSplash") }
+        set { setFlag("showSplash", newValue) }
+    }
+
+    /// Help window after the splash when the app is opened directly. On by default.
+    static var showHelpOnLaunch: Bool {
+        get { flag("showHelpOnLaunch") }
+        set { setFlag("showHelpOnLaunch", newValue) }
+    }
 
     /// Shown by default; hidden only when the user turns it off.
     static var showMenuBarIcon: Bool {
@@ -29,12 +49,12 @@ enum LoginItem {
         var message: String
         do {
             if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-            message = on ? "Open With Popup will start at login." : "Open With Popup won't start at login."
+            message = on ? "Choose With will start at login." : "Choose With won't start at login."
         } catch {
             message = "Couldn't change Start at login: \(error.localizedDescription)"
         }
         if SMAppService.mainApp.status == .requiresApproval {
-            message = "Allow Open With Popup in System Settings → General → Login Items."
+            message = "Allow Choose With in System Settings → General → Login Items."
             SMAppService.openSystemSettingsLoginItems()
         }
         NotificationCenter.default.post(name: .owpPrefsChanged, object: nil)
@@ -56,11 +76,11 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     @objc func update() {
         if Prefs.showMenuBarIcon, item == nil {
             let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-            let image = NSImage(systemSymbolName: "contextualmenu.and.cursorarrow", accessibilityDescription: "Open With Popup")
-                ?? NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: "Open With Popup")
+            let image = NSImage(systemSymbolName: "contextualmenu.and.cursorarrow", accessibilityDescription: "Choose With")
+                ?? NSImage(systemSymbolName: "filemenu.and.selection", accessibilityDescription: "Choose With")
             image?.isTemplate = true
             item.button?.image = image
-            item.button?.toolTip = "Open With Popup"
+            item.button?.toolTip = "Choose With"
             let menu = NSMenu()
             menu.delegate = self
             item.menu = menu
@@ -75,7 +95,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let title = NSMenuItem(title: "Open With Popup", action: nil, keyEquivalent: "")
+        let title = NSMenuItem(title: "Choose With", action: nil, keyEquivalent: "")
         title.isEnabled = false
         menu.addItem(title)
 
@@ -99,13 +119,13 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(makeItem("Settings…", #selector(openSettings), key: ","))
         menu.addItem(makeItem("How It Works…", #selector(openHelp)))
-        menu.addItem(makeItem("About Open With Popup", #selector(openAbout)))
+        menu.addItem(makeItem("About Choose With", #selector(openAbout)))
         let login = makeItem("Start at Login", #selector(toggleLogin))
         login.state = LoginItem.isEnabled ? .on : .off
         menu.addItem(login)
         menu.addItem(makeItem("Hide Menu Bar Icon", #selector(hideIcon)))
         menu.addItem(.separator())
-        menu.addItem(makeItem("Quit Open With Popup", #selector(quit), key: "q"))
+        menu.addItem(makeItem("Quit Choose With", #selector(quit), key: "q"))
     }
 
     private func makeItem(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
@@ -126,7 +146,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
         alert.messageText = "Hide the menu bar icon?"
-        alert.informativeText = "Open With Popup keeps working. To show the icon again, open Open With Popup from Spotlight or your Applications folder and turn it back on in Settings."
+        alert.informativeText = "Choose With keeps working. To show the icon again, open Choose With from Spotlight or your Applications folder and turn it back on in Settings."
         alert.addButton(withTitle: "Hide Icon")
         alert.addButton(withTitle: "Cancel")
         if alert.runModal() == .alertFirstButtonReturn {

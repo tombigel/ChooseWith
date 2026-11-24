@@ -1,19 +1,20 @@
 #!/bin/zsh
-# Build OpenWithPopup.app and install it to ~/Applications.
+# Build ChooseWith.app and install it to ~/Applications.
 #
 # Signing: uses your "Developer ID Application" certificate if one is in the
 # keychain (or SIGN_ID="Developer ID Application: Name (TEAMID)"), otherwise signs
 # ad hoc, which only runs on this Mac.
 #
 # Release: NOTARIZE=1 ./build.sh  also notarizes with Apple, staples the ticket and
-# writes dist/OpenWithPopup.zip. Needs a notarytool keychain profile, created once with:
+# writes dist/ChooseWith.zip. Needs a notarytool keychain profile, created once with:
 #   xcrun notarytool store-credentials OpenWithPopup --apple-id you@example.com --team-id TEAMID
 # (override the profile name with NOTARY_PROFILE=...).
 set -euo pipefail
 cd "${0:A:h}"
 
-APP=build/OpenWithPopup.app
-DEST="$HOME/Applications/OpenWithPopup.app"
+APP=build/ChooseWith.app
+DEST="$HOME/Applications/ChooseWith.app"
+# Keychain profile saved with notarytool store-credentials (named before the rename).
 NOTARY_PROFILE="${NOTARY_PROFILE:-OpenWithPopup}"
 
 if [[ -z "${SIGN_ID:-}" ]]; then
@@ -25,9 +26,9 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp Info.plist "$APP/Contents/Info.plist"
 [[ -f Resources/AppIcon.icns ]] || swift tools/make_icon.swift
 cp Resources/AppIcon.icns "$APP/Contents/Resources/"
-swiftc -O -swift-version 5 -target arm64-apple-macos13 -o build/owp-arm64 Sources/*.swift
-swiftc -O -swift-version 5 -target x86_64-apple-macos13 -o build/owp-x86_64 Sources/*.swift
-lipo -create build/owp-arm64 build/owp-x86_64 -output "$APP/Contents/MacOS/OpenWithPopup"
+swiftc -O -swift-version 5 -target arm64-apple-macos13 -o build/cw-arm64 Sources/*.swift
+swiftc -O -swift-version 5 -target x86_64-apple-macos13 -o build/cw-x86_64 Sources/*.swift
+lipo -create build/cw-arm64 build/cw-x86_64 -output "$APP/Contents/MacOS/ChooseWith"
 
 if [[ -n "$SIGN_ID" ]]; then
   echo "Signing with: $SIGN_ID"
@@ -45,11 +46,12 @@ if [[ "${NOTARIZE:-0}" == 1 ]]; then
   xcrun notarytool submit build/notarize.zip --keychain-profile "$NOTARY_PROFILE" --wait
   xcrun stapler staple "$APP"
   spctl --assess --type execute --verbose "$APP"
-  ditto -c -k --keepParent "$APP" dist/OpenWithPopup.zip
-  echo "Release: dist/OpenWithPopup.zip"
+  ditto -c -k --keepParent "$APP" dist/ChooseWith.zip
+  echo "Release: dist/ChooseWith.zip"
 fi
 
 # The app stays running in the background; quit the old copy before replacing it.
+pkill -x ChooseWith || true
 pkill -x OpenWithPopup || true
 mkdir -p "$HOME/Applications"
 rm -rf "$DEST"

@@ -1,13 +1,14 @@
-// OpenWithPopup — when set as the default app for a file type, opening such a
+// ChooseWith — when set as the default app for a file type, opening such a
 // file (double-click, Return, `open file.ext`) shows an "Open With" menu at the
 // mouse pointer instead of launching a fixed app.
 //
 // CLI:
-//   OpenWithPopup --register ext [ext ...]    make this app the default for these extensions
-//   OpenWithPopup --unregister ext [ext ...]  give these extensions back to their previous default
-//   OpenWithPopup --restore ext=bundle.id ... hand an extension to a specific app
-//   OpenWithPopup --status                    show each managed extension and its current default
-//   OpenWithPopup --list ext                  print the apps that can open an extension
+//   ChooseWith --register ext [ext ...]    make this app the default for these extensions
+//   ChooseWith --unregister ext [ext ...]  give these extensions back to their previous default
+//   ChooseWith --restore ext=bundle.id ... hand an extension to a specific app
+//   ChooseWith --login on|off              start at login or not
+//   ChooseWith --status                    show each managed extension and its current default
+//   ChooseWith --list ext                  print the apps that can open an extension
 //
 // Launched with no files (double-click the app), it opens the Settings window.
 
@@ -40,6 +41,12 @@ func runCLI(_ args: [String]) -> Int32? {
             ok = report(parts[0], Registry.setDefault(bundleID: parts[1], forExtension: parts[0]), "→ \(parts[1])") && ok
         }
         return ok ? 0 : 1
+    case "--login":
+        guard let arg = rest.first, ["on", "off"].contains(arg) else {
+            print("usage: --login on|off   (now \(LoginItem.isEnabled ? "on" : "off"))"); return 2
+        }
+        print(LoginItem.set(arg == "on"))
+        return LoginItem.isEnabled == (arg == "on") ? 0 : 1
     case "--status":
         for ext in Registry.tracked {
             let h = Registry.currentHandler(forExtension: ext) ?? "none"
@@ -84,21 +91,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
             return
         }
         // Launched by opening files, the open event usually arrives first; give it a
-        // moment anyway. Launched directly (no files): show Settings, plus Help the
-        // very first time.
+        // moment anyway. Launched directly (no files): splash, then Settings and Help
+        // (each can be turned off).
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
             guard let self, !self.receivedFiles else { return }
-            let splash = SplashController()
-            self.splash = splash
-            splash.show { [weak self] in
+            let next = { [weak self] in
                 guard let self else { return }
                 self.splash = nil
                 self.showSettings()
-                if !UserDefaults.standard.bool(forKey: "helpShown") {
-                    UserDefaults.standard.set(true, forKey: "helpShown")
-                    self.showHelp()
-                }
+                if Prefs.showHelpOnLaunch { self.showHelp() }
             }
+            guard Prefs.showSplash else { next(); return }
+            let splash = SplashController()
+            self.splash = splash
+            splash.show(completion: next)
         }
     }
 
@@ -140,11 +146,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         let main = NSMenu()
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "About Open With Popup", action: #selector(showAbout), keyEquivalent: "").target = self
+        appMenu.addItem(withTitle: "About Choose With", action: #selector(showAbout), keyEquivalent: "").target = self
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",").target = self
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Quit Open With Popup", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit Choose With", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         main.addItem(appItem)
 
@@ -169,7 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
 
         let helpItem = NSMenuItem()
         let helpMenu = NSMenu(title: "Help")
-        helpMenu.addItem(withTitle: "Open With Popup Help", action: #selector(showHelp), keyEquivalent: "?").target = self
+        helpMenu.addItem(withTitle: "Choose With Help", action: #selector(showHelp), keyEquivalent: "?").target = self
         helpItem.submenu = helpMenu
         main.addItem(helpItem)
         NSApp.helpMenu = helpMenu
@@ -267,7 +273,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         reveal.representedObject = urls
         menu.addItem(reveal)
         menu.addItem(.separator())
-        let prefs = NSMenuItem(title: "Open With Popup Settings…", action: #selector(showSettings), keyEquivalent: "")
+        let prefs = NSMenuItem(title: "Choose With Settings…", action: #selector(showSettings), keyEquivalent: "")
         prefs.target = self
         menu.addItem(prefs)
 

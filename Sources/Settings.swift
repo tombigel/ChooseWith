@@ -22,10 +22,14 @@ final class SettingsModel: ObservableObject {
         NotificationCenter.default.addObserver(forName: .owpPrefsChanged, object: nil, queue: .main) { [weak self] _ in
             self?.launchAtLogin = LoginItem.isEnabled
             self?.showMenuBarIcon = Prefs.showMenuBarIcon
+            self?.showSplash = Prefs.showSplash
+            self?.showHelpOnLaunch = Prefs.showHelpOnLaunch
         }
     }
 
     @Published var showMenuBarIcon = Prefs.showMenuBarIcon
+    @Published var showSplash = Prefs.showSplash
+    @Published var showHelpOnLaunch = Prefs.showHelpOnLaunch
 
     func setLaunchAtLogin(_ on: Bool) {
         message = LoginItem.set(on)
@@ -77,7 +81,7 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Files with these extensions show the Open With menu when you open them.")
+            Text("Files with these extensions let you choose which app opens them, every time.")
                 .foregroundStyle(.secondary)
 
             List {
@@ -91,7 +95,7 @@ struct SettingsView: View {
                             .font(.system(.body, design: .monospaced))
                             .frame(minWidth: 70, alignment: .leading)
                         if row.active {
-                            Label("Popup", systemImage: "checkmark.circle.fill")
+                            Label("Active", systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                         } else {
                             Label("Opens in \(row.handlerName ?? "no app")", systemImage: "exclamationmark.triangle.fill")
@@ -130,7 +134,13 @@ struct SettingsView: View {
             Toggle("Show icon in menu bar", isOn: Binding(
                 get: { model.showMenuBarIcon },
                 set: { model.setShowMenuBarIcon($0) }))
-            Text("Open With Popup keeps running in the background without a Dock icon. Quit it from the menu bar icon, or with ⌘Q in this window.")
+            Toggle("Show splash screen when opening Choose With", isOn: Binding(
+                get: { model.showSplash },
+                set: { Prefs.showSplash = $0 }))
+            Toggle("Show Help when opening Choose With", isOn: Binding(
+                get: { model.showHelpOnLaunch },
+                set: { Prefs.showHelpOnLaunch = $0 }))
+            Text("Choose With keeps running in the background without a Dock icon. Quit it from the menu bar icon, or with ⌘Q in this window.")
                 .font(.caption).foregroundStyle(.secondary)
 
             HStack(alignment: .top) {
@@ -149,11 +159,11 @@ struct SettingsView: View {
                 .buttonStyle(.bordered)
                 .clipShape(Circle())
                 .controlSize(.small)
-                .help("How Open With Popup works")
+                .help("How Choose With works")
             }
         }
         .padding(16)
-        .frame(minWidth: 440, minHeight: 400)
+        .frame(minWidth: 440, minHeight: 460)
     }
 }
 
@@ -165,7 +175,7 @@ final class SettingsWindowController: NSWindowController {
             contentRect: NSRect(x: 0, y: 0, width: 480, height: 400),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
             backing: .buffered, defer: false)
-        window.title = "Open With Popup Settings"
+        window.title = "Choose With Settings"
         window.isReleasedWhenClosed = false
         window.center()
         window.setFrameAutosaveName("SettingsWindow")

@@ -1,0 +1,3 @@
+#!/bin/zsh
+# Shortcut for the installed app's CLI: ./choosewith --register md txt | --unregister md | --list md
+exec "$HOME/Applications/ChooseWith.app/Contents/MacOS/ChooseWith" "$@"

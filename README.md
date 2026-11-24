@@ -1,4 +1,9 @@
-# Open With Popup
+# Choose With
+
+**Don't just open with. Choose with.**
+
+The name is a word game on the Finder's **Open With** menu: instead of a file
+opening with one fixed app, you choose what it opens with, every time.
 
 A tiny macOS app that turns "Open With" into a popup. Make it the default app for
 any file extensions you choose; opening one of those files (double-click, Return,
@@ -15,11 +20,11 @@ any file extensions you choose; opening one of those files (double-click, Return
 ./build.sh
 ```
 
-Builds `OpenWithPopup.app` and installs it to `~/Applications`.
+Builds `ChooseWith.app` and installs it to `~/Applications`.
 
 ## Settings
 
-Open **Open With Popup** directly (Spotlight, `~/Applications`, or ⌘, while it's
+Open **Choose With** directly (Spotlight, `~/Applications`, or ⌘, while it's
 running, or the last item in any popup) to add and remove extensions. Removing an
 extension gives it back to the app that opened it before. macOS may ask you to
 confirm each change of default app.
@@ -39,11 +44,12 @@ directly shows a short splash screen; starting at login or opening a file never 
 ## Command line
 
 ```bash
-./owp --register md txt     # use the popup for these extensions
-./owp --unregister md       # give .md back to its previous app
-./owp --status              # managed extensions and whether each is active
-./owp --list md             # apps that can open .md
-./owp --restore md=com.microsoft.VSCode
+./choosewith --register md txt     # use the popup for these extensions
+./choosewith --unregister md       # give .md back to its previous app
+./choosewith --login on            # start at login (or off)
+./choosewith --status              # managed extensions and whether each is active
+./choosewith --list md             # apps that can open .md
+./choosewith --restore md=com.microsoft.VSCode
 ```
 
 ## Signing and releases
@@ -64,7 +70,7 @@ then:
 NOTARIZE=1 ./build.sh
 ```
 
-which writes `dist/OpenWithPopup.zip`.
+which writes `dist/ChooseWith.zip`.
 
 ## Icon
 

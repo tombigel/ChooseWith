@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIdentifier</key>
-	<string>com.tombigel.OpenWithPopup</string>
+	<string>com.tombigel.ChooseWith</string>
 	<key>CFBundleName</key>
-	<string>OpenWithPopup</string>
+	<string>ChooseWith</string>
 	<key>CFBundleDisplayName</key>
-	<string>Open With Popup</string>
+	<string>Choose With</string>
 	<key>CFBundleExecutable</key>
-	<string>OpenWithPopup</string>
+	<string>ChooseWith</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

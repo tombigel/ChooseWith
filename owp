@@ -1,3 +1,0 @@
-#!/bin/zsh
-# Shortcut for the installed app's CLI: ./owp --register md txt | --unregister md | --list md
-exec "$HOME/Applications/OpenWithPopup.app/Contents/MacOS/OpenWithPopup" "$@"

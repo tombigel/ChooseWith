@@ -18,7 +18,7 @@ enum Credits {
     static func showAboutPanel() {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(options: [
-            .applicationName: "Open With Popup",
+            .applicationName: "Choose With",
             .credits: aboutCredits(),
         ])
     }
@@ -28,7 +28,7 @@ enum Credits {
         let para = NSMutableParagraphStyle()
         para.alignment = .center
         let text = NSMutableAttributedString(
-            string: "Made by \(author)\n",
+            string: "A word game on “Open With”: you choose what every file opens with.\n\nMade by \(author)\n",
             attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor, .paragraphStyle: para])
         text.append(NSAttributedString(
             string: websiteName,
@@ -39,12 +39,13 @@ enum Credits {
 
 extension Notification.Name {
     /// Posted by any view or menu that wants the Help or Settings window shown.
-    static let owpShowHelp = Notification.Name("OpenWithPopupShowHelp")
-    static let owpShowSettings = Notification.Name("OpenWithPopupShowSettings")
+    static let owpShowHelp = Notification.Name("ChooseWithShowHelp")
+    static let owpShowSettings = Notification.Name("ChooseWithShowSettings")
 }
 
 struct HelpView: View {
     var close: () -> Void
+    @State private var dontShowAgain = !Prefs.showHelpOnLaunch
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -52,8 +53,8 @@ struct HelpView: View {
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable().frame(width: 56, height: 56)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Open With Popup").font(.title2.bold())
-                    Text("Choose which app opens a file, every time you open it.")
+                    Text("Choose With").font(.title2.bold())
+                    Text("Don’t just open with. Choose with.")
                         .foregroundStyle(.secondary)
                 }
             }
@@ -61,7 +62,7 @@ struct HelpView: View {
             section("How it works") {
                 step(1, "Add file extensions in Settings, like **md** or **json**. macOS may ask you to confirm.")
                 step(2, "Open one of those files the usual way: double-click it, or select it and press ⌘↓.")
-                step(3, "A menu appears at your pointer. Pick the app to open it with.")
+                step(3, "A menu appears at your pointer. Choose the app to open it with.")
             }
 
             section("Tips") {
@@ -70,8 +71,21 @@ struct HelpView: View {
                 tip("doc.on.doc", "Select several files to open them together. Only apps that can open all of them are listed.")
                 tip("ellipsis.circle", "**Other…** picks any app. **Show in Finder** reveals the files.")
                 tip("arrow.uturn.backward", "Removing an extension gives it back to the app that opened it before.")
-                tip("menubar.rectangle", "The app runs in the background. Turn on **Start at login** so the menu is always instant.")
+                tip("menubar.rectangle", "Choose With runs in the background. Turn on **Start at login** so the menu is always instant.")
             }
+
+            section("About the name") {
+                Text("It’s a word game on the Finder’s **Open With** menu. Normally a file just opens with its default app. Here, every time, you **choose with** what it opens.")
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Toggle("Don’t show this when opening Choose With", isOn: Binding(
+                get: { dontShowAgain },
+                set: { dontShowAgain = $0; Prefs.showHelpOnLaunch = !$0 }))
+                .toggleStyle(.checkbox)
+                .onReceive(NotificationCenter.default.publisher(for: .owpPrefsChanged)) { _ in
+                    dontShowAgain = !Prefs.showHelpOnLaunch
+                }
 
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -127,7 +141,7 @@ final class HelpWindowController: NSWindowController {
             contentRect: NSRect(x: 0, y: 0, width: 460, height: 520),
             styleMask: [.titled, .closable],
             backing: .buffered, defer: false)
-        window.title = "About Open With Popup"
+        window.title = "About Choose With"
         window.isReleasedWhenClosed = false
         self.init(window: window)
         window.contentView = NSHostingView(rootView: HelpView { [weak window] in window?.close() })
