@@ -79,9 +79,8 @@ enum AppLists {
 
     static func clearIconCache() { iconCache.removeAll() }
 
-    /// The app's icon as a plain bitmap image (1x and 2x pixels). Menus are drawn
-    /// by another process on current macOS, which drops icons that are drawn on
-    /// demand, so the pixels have to be real.
+    /// The app's icon as a small bitmap image (1x and 2x pixels), sized for menus
+    /// and lists.
     static func icon(_ app: URL, size: CGFloat = 16) -> NSImage {
         let cacheKey = "\(app.path)@\(size)"
         if let cached = iconCache[cacheKey] { return cached }

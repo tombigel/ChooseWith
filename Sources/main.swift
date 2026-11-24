@@ -318,6 +318,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSWind
         item.target = self
         item.representedObject = (app, urls)
         item.image = AppLists.icon(app)
+        // macOS 27 hides menu item images unless an item asks to show them.
+        if #available(macOS 27.0, *) { item.preferredImageVisibility = .visible }
         item.toolTip = app.path
         return item
     }
