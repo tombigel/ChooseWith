@@ -3,7 +3,7 @@
 import AppKit
 import UniformTypeIdentifiers
 
-let selfBundleID = Bundle.main.bundleIdentifier ?? "com.local.OpenWithPopup"
+let selfBundleID = Bundle.main.bundleIdentifier ?? "com.tombigel.OpenWithPopup"
 
 enum Registry {
     private static let defaults = UserDefaults.standard
