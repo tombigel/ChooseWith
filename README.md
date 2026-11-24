@@ -25,7 +25,8 @@ Builds `ChooseWith.app` and installs it to `~/Applications`.
 ## Settings
 
 Open **Choose With** directly (Spotlight, `~/Applications`, or ⌘, while it's
-running, or the last item in any popup) to add and remove extensions. Removing an
+running, or the last item in any popup) to add and remove extensions. The pencil next to an extension lets you reorder its
+apps and hide the ones you don't need (they move under **More Apps**). Removing an
 extension gives it back to the app that opened it before. Apps, folders, disks,
 aliases and links can't be added, so opening them always works as usual. macOS may ask you to
 confirm each change of default app.
@@ -38,7 +39,7 @@ A **menu bar icon** shows which extensions are active and has Settings, Start at
 Login, Hide Menu Bar Icon and Quit. Hide or show it from the menu or in Settings;
 when it's hidden, open the app again to get back to Settings.
 
-**Help** (Help menu, ⌘?, "How It Works…" in the menu bar menu, or the **?** button in
+**Help** (Help menu, ⌘?, "How it works?" in the menu bar menu, or the **?** button in
 Settings) explains how it works; it also opens on first launch. Opening the app
 directly shows a short splash screen; starting at login or opening a file never does.
 

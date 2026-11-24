@@ -119,16 +119,22 @@ struct SettingsView: View {
                         if let summary = row.appSummary {
                             Text(summary).font(.caption).foregroundStyle(.secondary)
                         }
-                        Button("Customize…") { customizing = CustomizeTarget(ext: row.ext) }
-                            .controlSize(.small)
-                            .help(Text(verbatim: "Reorder and hide apps in the menu for ." + row.ext))
+                        Button {
+                            customizing = CustomizeTarget(ext: row.ext)
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+                        .buttonStyle(.borderless)
+                        .help(Text(verbatim: "Customize apps for ." + row.ext + ": reorder and hide"))
+                        .accessibilityLabel(Text(verbatim: "Customize apps for ." + row.ext))
                         Button {
                             model.remove(row.ext)
                         } label: {
-                            Image(systemName: "minus.circle")
+                            Image(systemName: "trash")
                         }
                         .buttonStyle(.borderless)
                         .help(Text(verbatim: "Remove ." + row.ext + " and give it back to its previous app"))
+                        .accessibilityLabel(Text(verbatim: "Remove ." + row.ext))
                     }
                     .padding(.vertical, 2)
                 }
@@ -172,8 +178,6 @@ struct SettingsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
-                Button("Refresh") { model.reload() }
-                    .controlSize(.small)
                 Button {
                     NotificationCenter.default.post(name: .owpShowHelp, object: nil)
                 } label: {
@@ -183,6 +187,7 @@ struct SettingsView: View {
                 .clipShape(Circle())
                 .controlSize(.small)
                 .help("How Choose With works")
+                .accessibilityLabel("Help")
             }
         }
         .padding(16)
