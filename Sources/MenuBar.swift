@@ -118,10 +118,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
         menu.addItem(makeItem("Settings…", #selector(openSettings), key: ","))
+        menu.addItem(.separator())
         menu.addItem(makeItem("How It Works…", #selector(openHelp)))
         menu.addItem(makeItem("About Choose With", #selector(openAbout)))
         menu.addItem(makeItem("Choose With on GitHub", #selector(openRepo)))
         menu.addItem(makeItem("Report a Bug…", #selector(reportBug)))
+        menu.addItem(.separator())
         let login = makeItem("Start at Login", #selector(toggleLogin))
         login.state = LoginItem.isEnabled ? .on : .off
         menu.addItem(login)

@@ -33,7 +33,7 @@ enum Credits {
         let para = NSMutableParagraphStyle()
         para.alignment = .center
         let text = NSMutableAttributedString(
-            string: "A twist on the Finder’s “Open With”.\n\nMade by \(author)\n",
+            string: "Made by \(author)\n",
             attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor, .paragraphStyle: para])
         text.append(NSAttributedString(
             string: websiteName,
@@ -56,7 +56,7 @@ extension Notification.Name {
 
 struct HelpView: View {
     var close: () -> Void
-    @State private var dontShowAgain = !Prefs.showHelpOnLaunch
+    @State private var showOnLaunch = Prefs.showHelpOnLaunch
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -87,16 +87,12 @@ struct HelpView: View {
                 tip("menubar.rectangle", "Choose With runs in the background. Turn on **Start at login** so the menu is always instant.")
             }
 
-
-            Text("The name is a twist on the Finder’s **Open With**.")
-                .font(.callout).foregroundStyle(.secondary)
-
-            Toggle("Don’t show this when opening Choose With", isOn: Binding(
-                get: { dontShowAgain },
-                set: { dontShowAgain = $0; Prefs.showHelpOnLaunch = !$0 }))
+            Toggle("Show this when opening Choose With", isOn: Binding(
+                get: { showOnLaunch },
+                set: { showOnLaunch = $0; Prefs.showHelpOnLaunch = $0 }))
                 .toggleStyle(.checkbox)
                 .onReceive(NotificationCenter.default.publisher(for: .owpPrefsChanged)) { _ in
-                    dontShowAgain = !Prefs.showHelpOnLaunch
+                    showOnLaunch = Prefs.showHelpOnLaunch
                 }
 
             HStack {

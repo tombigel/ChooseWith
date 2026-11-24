@@ -2,7 +2,8 @@
 
 **Don't just open with. Choose with.**
 
-The name is a twist on the Finder's **Open With**.
+The name is a twist on the Finder's **Open With** menu. Normally a file opens with
+one fixed app; with Choose With, you choose what it opens with, every time.
 
 A tiny macOS app that turns "Open With" into a popup. Make it the default app for
 any file extensions you choose; opening one of those files (double-click, Return,
