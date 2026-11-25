@@ -189,12 +189,14 @@ NOTARIZE=1 ./build.sh
 which writes `dist/ChooseWith-<version>.zip` and prints its SHA-256. The version
 comes from `CFBundleShortVersionString` in `Info.plist`.
 
-## Demo GIF
+## Demo GIF and preview image
 
 The README's demo is recorded from the website's animation. With the site served
 locally (`python3 -m http.server 8765 --directory docs`), run
 `node tools/record-demo.mjs` to re-record `docs/assets/demo-light.gif` and
 `demo-dark.gif` (needs Google Chrome and ffmpeg).
+`node tools/social-preview.mjs` renders `docs/assets/social-preview.png`, the
+image for link previews (upload it in the repo's Settings › Social preview).
 
 ## Icon
 
