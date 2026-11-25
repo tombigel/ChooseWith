@@ -4,6 +4,11 @@
 
 [Website and docs](https://tombigel.github.io/ChooseWith/)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/demo-dark.gif">
+  <img src="docs/assets/demo-light.gif" width="760" alt="Double-clicking a .3mf file in Finder shows a Choose With menu with three slicers: BambuStudio, Snapmaker Orca and OrcaSlicer. OrcaSlicer is chosen.">
+</picture>
+
 The name is a twist on the Finder's **Open With** menu. Normally a file opens with
 one fixed app; with Choose With, you choose what it opens with, every time.
 
@@ -183,6 +188,13 @@ NOTARIZE=1 ./build.sh
 
 which writes `dist/ChooseWith-<version>.zip` and prints its SHA-256. The version
 comes from `CFBundleShortVersionString` in `Info.plist`.
+
+## Demo GIF
+
+The README's demo is recorded from the website's animation. With the site served
+locally (`python3 -m http.server 8765 --directory docs`), run
+`node tools/record-demo.mjs` to re-record `docs/assets/demo-light.gif` and
+`demo-dark.gif` (needs Google Chrome and ffmpeg).
 
 ## Icon
 

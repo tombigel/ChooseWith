@@ -1,6 +1,8 @@
 // Copy buttons on command blocks, the docs table of contents, and the homepage demo.
 
 const copyIcon = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="1.8"/><path d="M10.5 5V3.8A1.8 1.8 0 0 0 8.7 2H3.8A1.8 1.8 0 0 0 2 3.8v4.9a1.8 1.8 0 0 0 1.8 1.8H5"/></svg>';
+const pauseIcon = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="4" y="3" width="3" height="10" rx="1"/><rect x="9" y="3" width="3" height="10" rx="1"/></svg>';
+const playIcon = '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5 3.2v9.6a.8.8 0 0 0 1.2.7l7.6-4.8a.8.8 0 0 0 0-1.4L6.2 2.5A.8.8 0 0 0 5 3.2z"/></svg>';
 const doneIcon = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
 
 // Text to copy: the commands only, without prompts or "# comments".
@@ -63,6 +65,7 @@ if (stage) {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   let paused = reduce.matches;
   let run = 0;
+  let userPaused = reduce.matches;   // paused by the button (or Reduce Motion), not by scrolling away
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const at = (el, dx = 0.5, dy = 0.5) => {
@@ -141,17 +144,16 @@ if (stage) {
     paused = p;
     run++;
     if (toggle) {
-      toggle.querySelector('span').textContent = p ? 'Play' : 'Pause';
-      toggle.setAttribute('aria-pressed', String(p));
+      toggle.innerHTML = (p ? playIcon : pauseIcon) + '<span>' + (p ? 'Play' : 'Pause') + '</span>';
     }
     if (p) still(); else play(run);
   }
 
-  toggle?.addEventListener('click', () => setPaused(!paused));
+  toggle?.addEventListener('click', () => { userPaused = !paused; setPaused(userPaused); });
   addEventListener('resize', () => { if (paused) still(); });
   // Only animate while the demo is on screen.
   new IntersectionObserver(([e]) => {
-    if (reduce.matches || toggle?.getAttribute('aria-pressed') === 'true') return;
+    if (userPaused) return;
     if (e.isIntersecting && paused) setPaused(false);
     else if (!e.isIntersecting && !paused) { paused = true; run++; }
   }, { threshold: 0.3 }).observe(stage);
