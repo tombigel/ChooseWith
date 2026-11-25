@@ -9,6 +9,7 @@
 // and every extension and app ID is validated. Nothing in it is ever run.
 
 import Foundation
+import SystemConfiguration
 
 struct ChooseWithConfig: Codable, Equatable {
     struct Apps: Codable, Equatable {
@@ -16,9 +17,17 @@ struct ChooseWithConfig: Codable, Equatable {
         var hidden: [String]?
     }
 
+    /// Where and when the file was exported. Shown before importing; never applied.
+    struct Info: Codable, Equatable {
+        var exportedAt: String?
+        var computer: String?
+        var appVersion: String?
+    }
+
     static let currentVersion = 1
 
     var version: Int
+    var info: Info?
     var extensions: [String]
     var apps: [String: Apps]?
     var takeBack: Bool?
@@ -57,6 +66,7 @@ enum ConfigIO {
         }
         return ChooseWithConfig(
             version: ChooseWithConfig.currentVersion,
+            info: nil,
             extensions: Registry.tracked,
             apps: apps.isEmpty ? nil : apps,
             takeBack: Prefs.takeBackExtensions,
@@ -68,7 +78,35 @@ enum ConfigIO {
     static func exportData() throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-        return try encoder.encode(current())
+        var config = current()
+        config.info = .init(
+            exportedAt: ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withInternetDateTime]),
+            computer: computerName(),
+            appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
+        return try encoder.encode(config)
+    }
+
+    /// The Mac's name as set in System Settings › General › Sharing.
+    static func computerName() -> String? {
+        let name = SCDynamicStoreCopyComputerName(nil, nil) as String?
+        return name.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
+    }
+
+    /// "Choose With Settings - Tom’s MacBook Pro - 2026-11-25.json"
+    static func suggestedFileName(date: Date = Date()) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        var parts = ["Choose With Settings"]
+        if let name = computerName() {
+            // Keep it a valid, tidy file name: no path separators or control characters.
+            let bad = CharacterSet(charactersIn: "/:\\").union(.controlCharacters)
+            let clean = String(String.UnicodeScalarView(name.unicodeScalars.filter { !bad.contains($0) }))
+                .trimmingCharacters(in: .whitespaces)
+            if !clean.isEmpty { parts.append(String(clean.prefix(60))) }
+        }
+        parts.append(f.string(from: date))
+        return parts.joined(separator: " - ") + ".json"
     }
 
     // MARK: Import
@@ -124,6 +162,16 @@ enum ConfigIO {
             apps[ext] = .init(order: order, hidden: hidden)
         }
         config.apps = apps.isEmpty ? nil : apps
+        // Info is only ever displayed: keep short, plain values and drop anything else.
+        func plain(_ v: String?) -> String? {
+            guard let v, !v.isEmpty, v.count <= 200,
+                  !v.unicodeScalars.contains(where: CharacterSet.controlCharacters.contains) else { return nil }
+            return v
+        }
+        if let info = config.info {
+            let clean = ChooseWithConfig.Info(exportedAt: plain(info.exportedAt), computer: plain(info.computer), appVersion: plain(info.appVersion))
+            config.info = (clean.exportedAt ?? clean.computer ?? clean.appVersion) == nil ? nil : clean
+        }
         return config
     }
 
@@ -139,6 +187,17 @@ enum ConfigIO {
         }
         var seen = Set<String>()
         return ids.filter { seen.insert($0).inserted }
+    }
+
+    /// "Exported from Tom’s MacBook Pro on 25 Nov 2026 at 14:02", or nil.
+    static func origin(_ config: ChooseWithConfig) -> String? {
+        guard let info = config.info else { return nil }
+        var text = "Exported"
+        if let c = info.computer { text += " from " + c }
+        if let s = info.exportedAt, let d = ISO8601DateFormatter().date(from: s) {
+            text += " on " + d.formatted(date: .abbreviated, time: .shortened)
+        }
+        return text == "Exported" ? nil : text
     }
 
     // MARK: Changes

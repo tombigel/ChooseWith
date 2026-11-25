@@ -106,8 +106,12 @@ or choose **Choose With Settings…** at the bottom of any menu.
 
 **Export / Import**
 - **Export…** saves your extensions, app lists and settings to a JSON file you can
-  keep with your dotfiles, put in iCloud Drive, or import on another Mac.
-- **Import…** shows exactly what will change before applying anything. It replaces
+  keep with your dotfiles, put in iCloud Drive, or import on another Mac. The file
+  is named with the Mac's name and the date (`Choose With Settings - Tom's MacBook
+  Pro - 2026-11-25.json`), and records the same, plus the app version, in its
+  `info` entry.
+- **Import…** shows where and when the file was exported and exactly what will
+  change before applying anything. It replaces
   this Mac's setup with the file's.
 - Per-Mac things aren't included: Start at login, which app each extension goes back
   to, and take-back history.
@@ -147,6 +151,7 @@ choosewith --take-back on             # take extensions back automatically
 choosewith --take-back-now            # reclaim anything another app took
 
 choosewith --export settings.json     # save your setup (no file: print it)
+choosewith --export ~/Desktop         # a folder: named with the Mac and date
 choosewith --import settings.json --dry-run   # show what would change
 choosewith --import settings.json     # apply it
 

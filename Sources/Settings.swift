@@ -59,7 +59,7 @@ final class SettingsModel: ObservableObject {
 
     func exportSettings() {
         let panel = NSSavePanel()
-        panel.nameFieldStringValue = "Choose With Settings.json"
+        panel.nameFieldStringValue = ConfigIO.suggestedFileName()
         panel.allowedContentTypes = [.json]
         panel.message = "Save your extensions, app lists and settings to a file you can import on another Mac."
         panel.prompt = "Export"
@@ -94,7 +94,7 @@ final class SettingsModel: ObservableObject {
         guard !changes.isEmpty else { message = "Nothing to change: this Mac already matches the file."; return }
         let alert = NSAlert()
         alert.messageText = "Import settings from “\(MenuText.safeFileName(url.lastPathComponent))”?"
-        alert.informativeText = "This will:\n" + changes.map { "• " + $0 }.joined(separator: "\n")
+        alert.informativeText = (ConfigIO.origin(config).map { $0 + ".\n\n" } ?? "") + "This will:\n" + changes.map { "• " + $0 }.joined(separator: "\n")
         alert.addButton(withTitle: "Import")
         alert.addButton(withTitle: "Cancel")
         guard alert.runModal() == .alertFirstButtonReturn else { return }

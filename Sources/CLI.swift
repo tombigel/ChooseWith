@@ -25,7 +25,8 @@ Takeovers
   --take-back-now                take back every extension another app claimed
 
 Export / Import (to move your setup between Macs)
-  --export [file]                write settings as JSON (to the terminal if no file)
+  --export [file|folder]         write settings as JSON (to the terminal if neither;
+                                 a folder gets a file named with the date and Mac)
   --import file [--dry-run]      replace this Mac's setup with the file's;
                                  --dry-run only shows what would change
 
@@ -163,8 +164,13 @@ func runCLI(_ args: [String]) -> Int32? {
         do {
             let data = try ConfigIO.exportData()
             if let path = rest.first, path != "-" {
-                try data.write(to: URL(fileURLWithPath: path), options: .atomic)
-                print("Exported to " + path)
+                var url = URL(fileURLWithPath: (path as NSString).expandingTildeInPath)
+                var isDir: ObjCBool = false
+                if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue {
+                    url.appendPathComponent(ConfigIO.suggestedFileName())   // a folder: use the dated name
+                }
+                try data.write(to: url, options: .atomic)
+                print("Exported to " + url.path)
             } else {
                 FileHandle.standardOutput.write(data)
                 print("")
@@ -181,6 +187,7 @@ func runCLI(_ args: [String]) -> Int32? {
         } catch {
             print("✗ " + error.localizedDescription); return 1
         }
+        if let origin = ConfigIO.origin(config) { print(origin + ".") }
         let changes = ConfigIO.changes(config)
         if changes.isEmpty { print("Nothing to change: this Mac already matches the file."); return 0 }
         if rest.contains("--dry-run") {
