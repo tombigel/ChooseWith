@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Choose With — choose which app opens a file, every time</title>
+<meta name="description" content="A small macOS app: open a file and pick the app from a menu at your pointer. Don't just open with. Choose with.">
+<meta property="og:title" content="Choose With">
+<meta property="og:description" content="Don't just open with. Choose with. Pick the app every time you open a file on your Mac.">
+<meta property="og:image" content="https://tombigel.github.io/ChooseWith/assets/icon.png">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="./"><img src="assets/icon.png" alt="">Choose With</a>
+    <nav aria-label="Site">
+      <a href="docs.html">Docs</a>
+      <a href="docs.html#command-line">Command line</a>
+      <a href="https://github.com/tombigel/ChooseWith">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero wrap">
+    <img class="icon" src="assets/icon.png" alt="Choose With app icon">
+    <h1>Choose With</h1>
+    <p class="tagline">Don't just open with. Choose with.</p>
+    <p class="lede">Pick the file types you want. Opening one of them — double-click, <kbd>⌘</kbd><kbd>↓</kbd>, or <code>open</code> in Terminal — shows a menu at your pointer with every app that can open it.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="https://github.com/tombigel/ChooseWith/releases/latest">Download for Mac</a>
+      <a class="btn btn-ghost" href="docs.html">Read the docs</a>
+    </div>
+    <div class="cmd"><pre>brew tap tombigel/tap
+brew trust tombigel/tap
+brew install --cask choose-with</pre></div>
+    <p class="req">Free and open source · macOS 13 or later · Apple Silicon and Intel · Signed and notarized</p>
+  </section>
+
+  <section class="demo-section wrap" aria-labelledby="demo-title">
+    <h2 id="demo-title" class="skip">Demo</h2>
+    <div class="demo-frame">
+      <div class="stage" role="img" aria-label="Animation: double-clicking Coat_Hook.3mf in Finder shows a menu with BambuStudio, Snapmaker Orca and OrcaSlicer, and OrcaSlicer is chosen.">
+        <div class="finder" aria-hidden="true">
+          <div class="f-side">
+            <div class="f-lights"><i></i><i></i><i></i></div>
+            <b>Favorites</b>
+            <span>Applications</span>
+            <span>Desktop</span>
+            <span>Documents</span>
+            <span>Downloads</span>
+            <span class="on">3D Printing</span>
+            <b>Locations</b>
+            <span>iCloud Drive</span>
+            <span>Macintosh HD</span>
+          </div>
+          <div class="f-main">
+            <div class="f-bar">3D Printing</div>
+            <div class="f-head"><span>Name</span><span>Date Modified</span><span>Kind</span></div>
+            <div>
+              <div class="f-row"><span class="n"><i class="doc gray"></i>Cable_Clip.stl</span><span class="m">Yesterday</span><span class="m">STL</span></div>
+              <div class="f-row" data-file><span class="n"><i class="doc"></i>Coat_Hook.3mf</span><span class="m">Today at 14:04</span><span class="m">3MF</span></div>
+              <div class="f-row"><span class="n"><i class="doc"></i>Desk_Organizer.3mf</span><span class="m">Monday</span><span class="m">3MF</span></div>
+              <div class="f-row"><span class="n"><i class="doc"></i>Headphone_Stand.3mf</span><span class="m">12 Nov 2026</span><span class="m">3MF</span></div>
+              <div class="f-row"><span class="n"><i class="doc gray"></i>Plant_Pot.step</span><span class="m">9 Nov 2026</span><span class="m">STEP</span></div>
+              <div class="f-row"><span class="n"><i class="doc"></i>Spool_Holder.3mf</span><span class="m">2 Nov 2026</span><span class="m">3MF</span></div>
+              <div class="f-row"><span class="n"><i class="doc gray"></i>Wall_Mount.stl</span><span class="m">28 Oct 2026</span><span class="m">STL</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="menu" aria-hidden="true">
+          <div class="h">Open “Coat_Hook.3mf” with</div>
+          <div class="it hl" data-app="BambuStudio"><span class="ic" style="background:#1f9d55">B</span>BambuStudio<span class="k">1</span></div>
+          <div class="it" data-app="Snapmaker Orca"><span class="ic" style="background:#111;box-shadow:inset 0 0 0 1px #555">S</span>Snapmaker Orca<span class="k">2</span></div>
+          <div class="it" data-app="OrcaSlicer"><span class="ic" style="background:#e8e8ea;color:#1b1b1d">O</span>OrcaSlicer<span class="k">3</span></div>
+          <div class="plain" style="display:flex">More Apps<span class="k" style="margin-left:auto;color:#8f8f95">›</span></div>
+          <div class="sep"></div>
+          <div class="plain">Other…</div>
+          <div class="plain">Show in Finder</div>
+          <div class="sep"></div>
+          <div class="plain">Choose With Settings…</div>
+        </div>
+        <div class="toast" aria-hidden="true"></div>
+        <svg class="cursor" viewBox="0 0 24 34" aria-hidden="true"><path d="M2 2v26l7-6.5 4.6 10.3 4.4-2-4.5-10H22z" fill="#000" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="demo-caption">
+        <span>Three slicers, one file type. Pick the right one each time — the rest wait under More Apps.</span>
+        <button type="button" class="copy demo-toggle" aria-pressed="false"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><rect x="4" y="3" width="3" height="10" rx="1"/><rect x="9" y="3" width="3" height="10" rx="1"/></svg><span>Pause</span></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" aria-label="Features">
+    <div class="features">
+      <div class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h6"/></svg></div>
+        <h3>Your order, your apps</h3>
+        <p>Drag apps into the order you want for each file type, and hide the ones you never use. A .svg can have twenty apps; your menu can have three.</p>
+      </div>
+      <div class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10h2M11 10h2M15 10h2M8 14h8"/></svg></div>
+        <h3>Fast from the keyboard</h3>
+        <p><kbd>Return</kbd> opens the first app, <kbd>1</kbd>–<kbd>9</kbd> pick the others, <kbd>Esc</kbd> cancels. The app you chose last comes first next time.</p>
+      </div>
+      <div class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div>
+        <h3>Keeps its place</h3>
+        <p>Apps sometimes make themselves the default. Choose With notices, warns you in the menu bar, and can take the file type back automatically.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="how">
+    <div class="wrap">
+      <h2 id="how">How it works</h2>
+      <ol class="steps">
+        <li><h3>Add file types</h3><p>Open Choose With and type the extensions you want a choice for — <code>3mf</code>, <code>svg</code>, <code>md</code>.</p></li>
+        <li><h3>Open a file</h3><p>Choose With is now their default, so opening one shows the menu right at your pointer.</p></li>
+        <li><h3>Choose</h3><p>Pick an app and the file opens in it. Remove a file type any time and it goes back to the app it used before.</p></li>
+      </ol>
+      <p class="center"><a class="btn btn-ghost" href="docs.html">Read the full docs</a></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Choose With by <a href="https://tombigel.com">Tom Bigelajzen</a> · MIT License</span>
+    <nav aria-label="Footer">
+      <a href="docs.html">Docs</a>
+      <a href="https://github.com/tombigel/ChooseWith">GitHub</a>
+      <a href="https://github.com/tombigel/ChooseWith/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/tombigel/ChooseWith/issues/new?template=bug_report.yml">Report a bug</a>
+    </nav>
+  </div>
+</footer>
+<script src="assets/site.js"></script>
+</body>
+</html>

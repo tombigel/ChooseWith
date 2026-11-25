@@ -2,6 +2,8 @@
 
 **Don't just open with. Choose with.**
 
+[Website and docs](https://tombigel.github.io/ChooseWith/)
+
 The name is a twist on the Finder's **Open With** menu. Normally a file opens with
 one fixed app; with Choose With, you choose what it opens with, every time.
 

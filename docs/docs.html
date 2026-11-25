@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs — Choose With</title>
+<meta name="description" content="Install, set up and use Choose With: the menu, settings, takeovers, export and import, and the command line.">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="./"><img src="assets/icon.png" alt="">Choose With</a>
+    <nav aria-label="Site">
+      <a href="docs.html" aria-current="page">Docs</a>
+      <a href="#command-line">Command line</a>
+      <a href="https://github.com/tombigel/ChooseWith">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="docs">
+  <nav class="toc" aria-label="On this page">
+    <ol>
+      <li><a href="#install">Install</a></li>
+      <li><a href="#getting-started">Getting started</a></li>
+      <li><a href="#the-menu">Using the menu</a></li>
+      <li><a href="#settings">Settings</a>
+        <ol>
+          <li><a href="#extensions">Extensions</a></li>
+          <li><a href="#app-lists">App lists</a></li>
+          <li><a href="#takeovers">Takeovers</a></li>
+          <li><a href="#appearance">Appearance</a></li>
+        </ol>
+      </li>
+      <li><a href="#menu-bar">Menu bar icon</a></li>
+      <li><a href="#export-import">Export and import</a></li>
+      <li><a href="#command-line">Command line</a></li>
+      <li><a href="#updating">Updating</a></li>
+      <li><a href="#uninstalling">Uninstalling</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+      <li><a href="#build">Building from source</a></li>
+    </ol>
+  </nav>
+
+  <main id="main" class="doc">
+    <h1>Choose With docs</h1>
+    <p class="intro">Choose With becomes the default app for the file extensions you pick. Opening one of those files shows a menu at your pointer with every app that can open it.</p>
+
+    <section id="install">
+      <h2>Install</h2>
+      <h3>With Homebrew</h3>
+      <p>Homebrew asks you to trust a third-party tap once before installing from it.</p>
+      <div class="cmd"><pre>brew tap tombigel/tap</pre></div>
+      <div class="cmd"><pre>brew trust tombigel/tap</pre></div>
+      <div class="cmd"><pre>brew install --cask choose-with</pre></div>
+      <p>This installs <strong>Choose With</strong> in Applications and puts the <code>choosewith</code> command on your PATH.</p>
+      <h3>Download</h3>
+      <p>Get <code>ChooseWith-&lt;version&gt;.zip</code> from the <a href="https://github.com/tombigel/ChooseWith/releases/latest">latest release</a>, unzip it, and move <strong>ChooseWith.app</strong> to Applications. It's signed with a Developer ID and notarized by Apple, so it opens without warnings.</p>
+      <div class="note"><strong>Requires</strong><span>macOS 13 Ventura or later. Universal: Apple Silicon and Intel.</span></div>
+    </section>
+
+    <section id="getting-started">
+      <h2>Getting started</h2>
+      <ol>
+        <li>Open <strong>Choose With</strong> from Applications or Spotlight. Settings opens.</li>
+        <li>Type the extensions you want a choice for in the field at the bottom of the list, for example <code>3mf, svg, md</code>, and press <kbd>Return</kbd>.</li>
+        <li>Turn on <strong>Start at login</strong> so the menu is instant after a restart.</li>
+        <li>Open one of those files in Finder. The menu appears at your pointer.</li>
+      </ol>
+      <p>Choose With keeps running in the background without a Dock icon. Open the app again, or use its <a href="#menu-bar">menu bar icon</a>, to get back to Settings.</p>
+    </section>
+
+    <section id="the-menu">
+      <h2>Using the menu</h2>
+      <div class="keys">
+        <kbd>Return</kbd><span>Open the first app. It starts highlighted.</span>
+        <kbd>1</kbd><span>… through <kbd>9</kbd>: open the first nine apps.</span>
+        <kbd>Esc</kbd><span>Close the menu without opening anything.</span>
+      </div>
+      <ul>
+        <li><strong>Order.</strong> The app you chose last for an extension is listed first, unless you've set your own order for it.</li>
+        <li><strong>More Apps.</strong> Apps you've hidden are one step away in this submenu.</li>
+        <li><strong>Several files.</strong> Select several and open them together; only apps that can open all of them are listed.</li>
+        <li><strong>Other…</strong> picks any app. <strong>Show in Finder</strong> reveals the files.</li>
+        <li><strong>Choose With Settings…</strong> at the bottom opens Settings.</li>
+      </ul>
+    </section>
+
+    <section id="settings">
+      <h2>Settings</h2>
+      <p>Open Choose With from Applications or Spotlight, press <kbd>⌘</kbd><kbd>,</kbd> while it's running, or choose <strong>Choose With Settings…</strong> at the bottom of any menu.</p>
+
+      <h3 id="extensions">Extensions</h3>
+      <ul>
+        <li>Add extensions in the field at the bottom of the list. Separate several with commas or spaces.</li>
+        <li>The <strong>trash</strong> button removes an extension and gives it back to the app that opened it before.</li>
+        <li>Each row shows the app count and, if another app has taken the extension, an orange <strong>Opens in …</strong> label with a <strong>Take Back</strong> button.</li>
+      </ul>
+      <div class="note"><strong>Can't add</strong><span>Apps, folders, disks, aliases and links. Taking over <code>.app</code> would put a menu in front of launching every app, so these always open as usual.</span></div>
+
+      <h3 id="app-lists">App lists</h3>
+      <p>The <strong>pencil</strong> next to an extension opens its app list.</p>
+      <ul>
+        <li><strong>Reorder:</strong> drag apps, or right-click one for Move to Top, Up, Down or Bottom.</li>
+        <li><strong>Hide:</strong> untick apps you rarely use. They move under <strong>More Apps</strong> in the menu.</li>
+        <li><strong>Show All</strong>, <strong>Hide All</strong> and <strong>Reset</strong> are at the bottom. Reset returns to the default order with every app shown.</li>
+        <li>The list stays in sync with installed apps. New apps are added at the end, shown.</li>
+      </ul>
+
+      <h3 id="takeovers">Takeovers</h3>
+      <p>Apps can make themselves the default for a file type, often when they're installed or updated. Choose With watches for this.</p>
+      <ul>
+        <li><strong>With “Take extensions back” off</strong> (the default), you're warned: the menu bar icon turns orange with a count, and Settings shows a banner with <strong>Take It Back</strong> and <strong>Take Back All</strong>.</li>
+        <li><strong>With it on</strong>, Choose With switches extensions back automatically, posts a quiet notification, and notes it on the extension's row.</li>
+      </ul>
+      <div class="note"><strong>Limit</strong><span>If an app re-claims the same extension 3 times within an hour, Choose With stops and leaves it to you, so the two apps don't fight.</span></div>
+
+      <h3 id="appearance">Appearance</h3>
+      <p>Show or hide the menu bar icon, the splash screen, and Help when opening Choose With.</p>
+    </section>
+
+    <section id="menu-bar">
+      <h2>Menu bar icon</h2>
+      <ul>
+        <li>Lists your active extensions; the full list is in a submenu. Click one to open its app list.</li>
+        <li>Has Settings, How it works?, About, GitHub, Report a Bug, Start at Login, Hide Menu Bar Icon and Quit.</li>
+        <li>Turns orange when another app has taken an extension, and offers <strong>Take Back</strong>.</li>
+      </ul>
+      <p>When the icon is hidden, open the app again to get back to Settings.</p>
+    </section>
+
+    <section id="export-import">
+      <h2>Export and import</h2>
+      <p>Move your setup to another Mac, keep it with your dotfiles, or put it in iCloud Drive.</p>
+      <ul>
+        <li><strong>Export…</strong> in Settings saves your extensions, app lists and settings as JSON. The file is named with the Mac and the date, like <code>Choose With Settings - Studio Mac - 2026-11-25.json</code>, and records the same in an <code>info</code> entry, with the app version.</li>
+        <li><strong>Import…</strong> shows where and when the file was exported and exactly what will change, before applying anything. It replaces this Mac's setup with the file's.</li>
+        <li>Per-Mac things aren't included: Start at login, which app each extension goes back to, and take-back history.</li>
+      </ul>
+      <div class="note"><strong>Safe to import</strong><span>An imported file is treated as untrusted: only regular files up to 1&nbsp;MB are read, every extension and app ID is validated, and nothing in it is ever run.</span></div>
+    </section>
+
+    <section id="command-line">
+      <h2>Command line</h2>
+      <p>Everything in Settings is also available from the terminal, and a running copy of the app picks up changes right away. Homebrew puts <code>choosewith</code> on your PATH; otherwise use the app's own binary:</p>
+      <div class="cmd"><pre>/Applications/ChooseWith.app/Contents/MacOS/ChooseWith --help</pre></div>
+      <p>Apps can be given by bundle ID or by name, in any letter case.</p>
+
+      <h3>Extensions</h3>
+      <table class="opts">
+        <thead><tr><th scope="col">Option</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>--register ext …</code></td><td>Use the Choose With menu for these extensions.</td></tr>
+          <tr><td><code>--unregister ext …</code></td><td>Give them back to the app that opened them before.</td></tr>
+          <tr><td><code>--unregister-all</code></td><td>Do that for every extension, for example before uninstalling.</td></tr>
+          <tr><td><code>--restore ext=bundle.id …</code></td><td>Hand an extension to a specific app.</td></tr>
+          <tr><td><code>--status</code></td><td>Extensions, their state, and all settings.</td></tr>
+        </tbody>
+      </table>
+      <div class="cmd"><pre>choosewith --register 3mf svg md</pre></div>
+      <div class="cmd"><pre>choosewith --status</pre></div>
+
+      <h3>Apps in the menu</h3>
+      <table class="opts">
+        <thead><tr><th scope="col">Option</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>--list ext</code></td><td>Apps for the extension, in menu order, hidden ones marked.</td></tr>
+          <tr><td><code>--order ext app[,app …]</code></td><td>Put these apps first, in this order.</td></tr>
+          <tr><td><code>--hide ext app …</code></td><td>Move apps under More Apps.</td></tr>
+          <tr><td><code>--show ext app …</code></td><td>Show hidden apps again.</td></tr>
+          <tr><td><code>--reset ext</code></td><td>Default order, all apps shown.</td></tr>
+        </tbody>
+      </table>
+      <div class="cmd"><pre>choosewith --order 3mf OrcaSlicer,BambuStudio</pre></div>
+      <div class="cmd"><pre>choosewith --hide svg Safari "Google Chrome"</pre></div>
+
+      <h3>Takeovers</h3>
+      <table class="opts">
+        <thead><tr><th scope="col">Option</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>--take-back on|off</code></td><td>Take extensions back automatically.</td></tr>
+          <tr><td><code>--take-back-now</code></td><td>Take back every extension another app claimed.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Export and import</h3>
+      <table class="opts">
+        <thead><tr><th scope="col">Option</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>--export [file|folder]</code></td><td>Write settings as JSON. No argument prints it; a folder gets a file named with the Mac and date.</td></tr>
+          <tr><td><code>--import file</code></td><td>Replace this Mac's setup with the file's.</td></tr>
+          <tr><td><code>--import file --dry-run</code></td><td>Only show what would change.</td></tr>
+        </tbody>
+      </table>
+      <div class="cmd"><pre>choosewith --export ~/Desktop</pre></div>
+      <div class="cmd"><pre>choosewith --import settings.json --dry-run</pre></div>
+
+      <h3>Settings</h3>
+      <table class="opts">
+        <thead><tr><th scope="col">Option</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>--login on|off</code></td><td>Start at login.</td></tr>
+          <tr><td><code>--menubar on|off</code></td><td>Menu bar icon.</td></tr>
+          <tr><td><code>--splash on|off</code></td><td>Splash screen when opening Choose With.</td></tr>
+          <tr><td><code>--help-on-launch on|off</code></td><td>Help window when opening Choose With.</td></tr>
+          <tr><td><code>--help</code></td><td>List every option.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="updating">
+      <h2>Updating</h2>
+      <p>With Homebrew:</p>
+      <div class="cmd"><pre>brew upgrade --cask choose-with</pre></div>
+      <p>If you downloaded it, replace the app with the one from the <a href="https://github.com/tombigel/ChooseWith/releases/latest">latest release</a>. Your settings are kept either way.</p>
+    </section>
+
+    <section id="uninstalling">
+      <h2>Uninstalling</h2>
+      <p>First give your extensions back to the apps that opened them before — the trash button next to each in Settings, or:</p>
+      <div class="cmd"><pre>choosewith --unregister-all</pre></div>
+      <p>Then quit Choose With from its menu bar icon and delete the app, or with Homebrew (<code>--zap</code> also removes its settings):</p>
+      <div class="cmd"><pre>brew uninstall --cask --zap choose-with</pre></div>
+      <div class="note warn"><strong>Skip step one</strong><span>and macOS picks another app for those extensions on its own.</span></div>
+    </section>
+
+    <section id="privacy">
+      <h2>Privacy</h2>
+      <p>Choose With makes no network connections and collects nothing. Its settings are stored locally in <code>~/Library/Preferences/com.tombigel.ChooseWith.plist</code>. The only links it opens are the website, GitHub and bug-report links you click.</p>
+    </section>
+
+    <section id="build">
+      <h2>Building from source</h2>
+      <div class="cmd"><pre>git clone https://github.com/tombigel/ChooseWith.git
+cd ChooseWith
+./build.sh</pre></div>
+      <p>Builds <code>ChooseWith.app</code> and installs it to <code>~/Applications</code>. It signs with your Developer ID certificate if one is in the keychain, or ad hoc otherwise. See the <a href="https://github.com/tombigel/ChooseWith#signing-and-releases">README</a> for notarizing and releases.</p>
+      <p>Found a bug? <a href="https://github.com/tombigel/ChooseWith/issues/new?template=bug_report.yml">Report it on GitHub</a>.</p>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>Choose With by <a href="https://tombigel.com">Tom Bigelajzen</a> · MIT License</span>
+    <nav aria-label="Footer">
+      <a href="./">Home</a>
+      <a href="https://github.com/tombigel/ChooseWith">GitHub</a>
+      <a href="https://github.com/tombigel/ChooseWith/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/tombigel/ChooseWith/issues/new?template=bug_report.yml">Report a bug</a>
+    </nav>
+  </div>
+</footer>
+<script src="assets/site.js"></script>
+</body>
+</html>
