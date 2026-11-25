@@ -2,7 +2,7 @@
 
 All notable changes to Choose With. Versions follow [Semantic Versioning](https://semver.org).
 
-## Unreleased
+## 1.1.0 — 2026-11-25
 
 - Exported settings files are named with the Mac's name and the date, and record
   where, when and from which version they were exported. Import shows that before
