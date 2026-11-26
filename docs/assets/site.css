@@ -151,6 +151,11 @@ code { font-family: var(--mono); font-size: 0.88em; background: var(--code-bg); 
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
   container-type: inline-size;
 }
+.cam {
+  position: absolute; inset: 0; transform-origin: 0 0;
+  transition: transform 1.1s cubic-bezier(0.45, 0, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) { .cam { transition: none; } }
 .finder {
   position: absolute; left: 5%; top: 7%; width: 90%; height: 86%;
   background: var(--d-win); border-radius: 12px; overflow: hidden;
@@ -302,6 +307,7 @@ footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
 
   .demo-section { padding-block: 8px 40px; }
   .stage { border-radius: 10px; }
+  .toast { font-size: 12px; padding: 6px 14px; bottom: 8%; white-space: nowrap; }
   .demo-caption { align-items: flex-start; font-size: 13px; }
   .demo-caption .copy { margin: -4px -9px 0 0; }
 

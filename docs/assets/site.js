@@ -61,6 +61,8 @@ if (stage) {
   const menu = stage.querySelector('.menu');
   const items = [...menu.querySelectorAll('.it')];
   const toast = stage.querySelector('.toast');
+  const cam = stage.querySelector('.cam');
+  const small = matchMedia('(max-width: 600px)');
   const toggle = document.querySelector('.demo-toggle');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   let paused = reduce.matches;
@@ -68,9 +70,32 @@ if (stage) {
   let userPaused = reduce.matches;   // paused by the button (or Reduce Motion), not by scrolling away
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  // A point on an element, in the camera's own (unzoomed) coordinates.
   const at = (el, dx = 0.5, dy = 0.5) => {
-    const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
-    return [r.left - s.left + r.width * dx, r.top - s.top + r.height * dy];
+    const c = cam.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const k = c.width / cam.offsetWidth || 1;
+    return [(r.left - c.left + r.width * dx) / k, (r.top - c.top + r.height * dy) / k];
+  };
+  // Phones: the demo is small, so the camera moves in on the menu.
+  const zoomTo = (x, y, instant) => {
+    let t = '';
+    if (small.matches) {
+      const W = cam.offsetWidth, H = cam.offsetHeight;
+      const mw = menu.offsetWidth, mh = menu.offsetHeight;
+      const z = Math.min(2.2, (W * 0.86) / mw, (H * 0.9) / mh);
+      const clamp = (v, lo) => Math.min(0, Math.max(lo, v));
+      const tx = clamp(W / 2 - z * (x + mw / 2), W - z * W);
+      const ty = clamp(H / 2 - z * (y + mh / 2), H - z * H);
+      t = `translate(${tx}px, ${ty}px) scale(${z})`;
+    }
+    if (instant) cam.style.transition = 'none';
+    cam.style.transform = t;
+    if (instant) { void cam.offsetWidth; cam.style.transition = ''; }
+  };
+  const zoomOut = (instant) => {
+    if (instant) cam.style.transition = 'none';
+    cam.style.transform = '';
+    if (instant) { void cam.offsetWidth; cam.style.transition = ''; }
   };
   const move = (x, y) => { cursor.style.transform = `translate(${x}px, ${y}px)`; };
   const click = async () => {
@@ -86,9 +111,9 @@ if (stage) {
     file.classList.remove('sel');
     toast.classList.remove('show');
     highlight(0);
-    const s = stage.getBoundingClientRect();
+    zoomOut(true);
     cursor.style.transition = 'none';
-    move(s.width * 0.78, s.height * 0.82);
+    move(cam.offsetWidth * 0.78, cam.offsetHeight * 0.82);
     void cursor.offsetWidth;
     cursor.style.transition = '';
   }
@@ -96,10 +121,12 @@ if (stage) {
   // The finished state, for Reduce Motion and while paused.
   function still() {
     file.classList.add('sel');
+    zoomOut(true);
     const [x, y] = at(file, 0.42, 0.6);
     menu.style.left = x + 'px';
     menu.style.top = y + 'px';
     menu.classList.add('open');
+    zoomTo(x, y, true);
     highlight(2);
     toast.classList.remove('show');
     const [cx, cy] = at(items[2], 0.4, 0.55);
@@ -114,7 +141,10 @@ if (stage) {
       await wait(700); if (!alive()) return;
       const [x, y] = at(file, 0.42, 0.6);
       move(x, y);
-      await wait(1000); if (!alive()) return;
+      menu.style.left = x + 'px';
+      menu.style.top = y + 'px';
+      zoomTo(x, y);                       // phones: head in toward where the menu will open
+      await wait(small.matches ? 1200 : 1000); if (!alive()) return;
       file.classList.add('sel');
       await click();
       menu.style.left = x + 'px';
@@ -132,6 +162,7 @@ if (stage) {
       cursor.style.transitionDuration = '';
       await click();
       menu.classList.remove('open');
+      zoomOut();
       toast.textContent = 'Opening Coat_Hook.3mf in ' + items[2].dataset.app + '…';
       toast.classList.add('show');
       await wait(2200); if (!alive()) return;
